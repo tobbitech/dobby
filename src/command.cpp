@@ -18,33 +18,53 @@ void Command::run(etl::string<32> arg_string) {
     _cmd_func_ptr(arg_string);
 }
 
-
 CommandParser::CommandParser() {
     // _partial_cmd_from_serial.clear();
 }
 
-void CommandParser::parse(etl::string<32> cmd_string) {
-    Serial.print("Recevied: ");
-    Serial.println(cmd_string.c_str());
-    size_t comma_i = cmd_string.find(',');
-    etl::string<6> cmd_id_string;
+void CommandParser::parse(ETLSTR cmd_string) {
+    // remove whitespace from end of line
+    // Iterate from the end and check if the character is in the set of characters to remove
+    while (!cmd_string.empty() && 
+        (cmd_string.back() == '\n' || cmd_string.back() == '\r' || cmd_string.back() == ' '))
+    {
+        cmd_string.pop_back(); // Remove the last character
+    }
 
-    Serial.print("Comma found as letter: ");
-    Serial.println(comma_i);
+    // log_info("Recevied: %s", cmd_string.c_str() );
 
-    // for (size_t i = 0; i < comma_i; i++ ) {
-    //     cmd_id_string[i] = cmd_string[i];
-    // }
+    CommandArgs args;
+    // casts output of find to int to get negative value when no comma is found
+    int comma_pos = cmd_string.find(",");
 
-    // uint16_t cmd_id = etl::to_arithmetic<uint16_t>(cmd_id_string, cmd_id_string.size());
+    // check if cmd is just command id or comma delimted list:
+    if ( comma_pos > 0 ) {
+        // comma delimited list
+        etl::vector<etl::string_view, 6> argv;
 
-    uint16_t cmd_id = etl::to_arithmetic<uint16_t>(cmd_string, cmd_string.size());
+        bool all_views_found = etl::get_token_list(cmd_string, argv, ",", false, 6);
+        if (!all_views_found) {
+            log_warning("Got more than 5 arguments. Omitting the excess arguments.");
+        }
+        
+        args.command_id = etl::to_arithmetic<uint16_t>(argv[0]);
+        args.n_args = argv.size() - 1; // subtract command ID
+        log_info("Received command ID: %d with %d arguments", args.command_id, args.n_args);
 
-    Serial.print("Conversion to int: ");
-    Serial.println(cmd_id);
+        for (size_t i = 1; i < argv.size(); i++) {
+            args.argv.push_back(etl::string<32>(argv[i]));
+            log_debug("%d: %s", i, args.argv[i-1].c_str());
+        }
+    }
+    else {
+        args.n_args = 0;
+        args.command_id = etl::to_arithmetic<uint16_t>(cmd_string);
+    }
 
-    // Serial.print("Received command id: ");
-    // Serial.println(cmd_id);
+    if ( args.command_id == 0 ) {
+        // error parsing command
+        log_error("Cannot parse: %s", cmd_string.c_str());
+    }
 }
 
 void CommandParser::add(uint16_t command_id, void (*cmd_func_ptr)(etl::string<32> arg_string)) {

@@ -1,11 +1,15 @@
 #pragma once
 #include<Arduino.h>
 #include<etl/string.h>
+#include<etl/vector.h>
 #include<etl/to_arithmetic.h>
 #include <ArduinoOTA.h>
+#include <logging.h>
 
 
 #define NO_COMMANDS 10
+
+#define ETLSTR etl::string<32>
 
 class Command {
     public:
@@ -18,6 +22,12 @@ class Command {
         void (*_cmd_func_ptr)(etl::string<32> arg_string);
         uint16_t _command_id;
 
+};
+
+struct CommandArgs {
+    uint16_t command_id;
+    uint8_t n_args;
+    etl::vector<ETLSTR, 5> argv;
 };
 
 class CommandParser {
