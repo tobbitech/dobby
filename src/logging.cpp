@@ -1,4 +1,7 @@
 #include <logging.h>
+#include <mqttConnection.h>
+
+extern Connection conn;
 
 void set_log_level(log_severity new_log_level) {
     log_level = new_log_level;
@@ -56,7 +59,7 @@ void log(etl::string<LOG_STRING_LENGTH> message, log_severity severity, bool onl
     Serial.println(modified_log_message.c_str());
     
     if (!only_serial) {
-        // TODO: send on MQTT
+        conn.publish_log(modified_log_message );
     }
 
     if (store_in_nvm) {
