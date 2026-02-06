@@ -9,20 +9,7 @@
 
 #define NO_COMMANDS 10
 
-#define ETLSTR etl::string<32>
-
-class Command {
-    public:
-        Command(uint16_t command_id, void (*cmd_func_ptr)(etl::string<32> arg_string) );
-        Command();
-        uint16_t get_cmd_id();
-        void run(etl::string<32> arg_string);
-
-    private:
-        void (*_cmd_func_ptr)(etl::string<32> arg_string);
-        uint16_t _command_id;
-
-};
+#define ETLSTR etl::string<128>
 
 struct CommandArgs {
     uint16_t command_id;
@@ -30,22 +17,38 @@ struct CommandArgs {
     etl::vector<ETLSTR, 5> argv;
 };
 
+class Command {
+    public:
+        Command(uint16_t command_id, void (*cmd_func_ptr)(CommandArgs args) );
+        Command();
+        uint16_t get_cmd_id();
+        void run(CommandArgs args);
+
+    private:
+        void (*_cmd_func_ptr)(CommandArgs args);
+        uint16_t _command_id;
+
+};
+
+
 class CommandParser {
 
     public:
         CommandParser();
         void tick();
-        void parse(etl::string<32>);
-        void add(uint16_t command_id, void (*cmd_func_ptr)(etl::string<32> arg_string));
+        void parse(ETLSTR);
+        void run_cmd(CommandArgs args);
+        void add(uint16_t command_id, void (*cmd_func_ptr)(CommandArgs args));
+        bool command_id_exists(uint16_t command_id);
 
     private:
         Command _cmd_list[NO_COMMANDS];
-        etl::string<32> _partial_cmd_from_serial;
+        ETLSTR _partial_cmd_from_serial;
 };
 
 
 // namespace cmd_func {
-    void reboot(etl::string<32> arg_string);
-    void status(etl::string<32> arg_string);
-    void enable_ota(etl::string<32> arg_string);
+    void reboot(CommandArgs args);
+    void status(CommandArgs args);
+    void enable_ota(CommandArgs args);
 // };

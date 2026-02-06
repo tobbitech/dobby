@@ -5,7 +5,7 @@ Command::Command() {
     // empty constructor
 }
 
-Command::Command(uint16_t command_id, void (*cmd_func_ptr)(etl::string<32> arg_string) ) {
+Command::Command(uint16_t command_id, void (*cmd_func_ptr)(CommandArgs args) ) {
     _cmd_func_ptr = cmd_func_ptr;
     _command_id = command_id;
 }
@@ -14,12 +14,12 @@ uint16_t Command::get_cmd_id() {
     return(_command_id);
 }
 
-void Command::run(etl::string<32> arg_string) {
-    _cmd_func_ptr(arg_string);
+void Command::run(CommandArgs args) {
+    _cmd_func_ptr(args);
 }
 
 CommandParser::CommandParser() {
-    // _partial_cmd_from_serial.clear();
+    _partial_cmd_from_serial.clear();
 }
 
 void CommandParser::parse(ETLSTR cmd_string) {
@@ -64,10 +64,30 @@ void CommandParser::parse(ETLSTR cmd_string) {
     if ( args.command_id == 0 ) {
         // error parsing command
         log_error("Cannot parse: %s", cmd_string.c_str());
+        return;
+    }
+    
+    if (command_id_exists(args.command_id)) {
+        _cmd_list[args.command_id].run(args);
     }
 }
 
-void CommandParser::add(uint16_t command_id, void (*cmd_func_ptr)(etl::string<32> arg_string)) {
+
+ bool CommandParser::command_id_exists(uint16_t command_id) {
+    for (size_t i = 0; i < NO_COMMANDS; i++) {
+        if (_cmd_list[i].get_cmd_id() == command_id) {
+            return(true);
+        }
+    }
+    log_warning("Command ID %d not found", command_id);
+    return(false);
+ }
+
+// void CommandParser::run_cmd(CommandArgs args) {
+    
+// }
+
+void CommandParser::add(uint16_t command_id, void (*cmd_func_ptr)(CommandArgs args)) {
     auto command = Command(command_id, cmd_func_ptr);
     
     _cmd_list[command_id] = command;
@@ -90,15 +110,15 @@ void CommandParser::tick() {
 }
 // using namespace cmd_func;
 
-void reboot(etl::string<32> arg_string) {
+void reboot(CommandArgs args) {
     ESP.restart();
 }
 
-void status(etl::string<32> arg_string) {
+void status(CommandArgs args) {
     Serial.println("Printing status...  (not implemented yet)");
 }
 
-void enable_ota(etl::string<32> arg_string) {
+void enable_ota(CommandArgs args) {
     Serial.println("Enabling OTA");
 
     ArduinoOTA
