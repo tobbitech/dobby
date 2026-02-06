@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "command.h"
 #include "logging.h"
+#include "command_funcs.h"
 
 CommandParser cmd;
 
@@ -11,10 +12,10 @@ void setup() {
   Serial.begin(112500);
   Serial.println("Hi there!");
 
-
-  cmd.add(1, reboot);
-  cmd.add(2, status);
-  cmd.add(3, enable_ota);
+  cmd.add(1, list_commands, "Lists available commands");
+  cmd.add(2, reboot, "Reboots device");
+  cmd.add(3, status, "Shows status of device");
+  cmd.add(4, enable_ota, "Sets device in OTA mode for 60 seconds");
 }
 
 

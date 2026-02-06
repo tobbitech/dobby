@@ -14,7 +14,8 @@ enum class log_severity : uint8_t {
     INFO,
     WARNING,
     ERROR,
-    CRITICAL
+    CRITICAL,
+    RESPONSE
 };
 
 static log_severity log_level = log_severity::INFO;
@@ -37,3 +38,4 @@ void log_info(const char* format, ...);
 void log_warning(const char* format, ...);
 void log_error(const char* format, ...);
 void log_critical(const char* format, ...);
+void log_response(const char* format, ...);

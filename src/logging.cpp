@@ -44,6 +44,11 @@ void log(etl::string<LOG_STRING_LENGTH> message, log_severity severity, bool onl
             modified_log_message.append(timestamp);
             modified_log_message.append("] ");
         } break;
+        case log_severity::RESPONSE: {
+            modified_log_message.assign("[RESPONSE:");
+            modified_log_message.append(timestamp);
+            modified_log_message.append("] ");
+        } break;
     }
 
     modified_log_message.append(message);
@@ -105,4 +110,13 @@ void log_critical(const char* format, ...) {
     va_end(args);
 
     log(buffer, log_severity::CRITICAL, false, false);
+}
+
+void log_response(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, LOG_STRING_LENGTH, format, args);
+    va_end(args);
+
+    log(buffer, log_severity::RESPONSE, false, false);
 }

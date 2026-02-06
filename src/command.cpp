@@ -2,12 +2,15 @@
 
 
 Command::Command() {
-    // empty constructor
+    _command_id = 0;
+    _cmd_func_ptr = nullptr;
+    _help_text.clear();
 }
 
-Command::Command(uint16_t command_id, void (*cmd_func_ptr)(CommandArgs args) ) {
+Command::Command(uint16_t command_id, void (*cmd_func_ptr)(CommandArgs args), etl::string<64> help_text) {
     _cmd_func_ptr = cmd_func_ptr;
     _command_id = command_id;
+    _help_text.assign(help_text);
 }
 
 uint16_t Command::get_cmd_id() {
@@ -16,6 +19,10 @@ uint16_t Command::get_cmd_id() {
 
 void Command::run(CommandArgs args) {
     _cmd_func_ptr(args);
+}
+
+etl::string_view Command::help() {
+    return _help_text;
 }
 
 CommandParser::CommandParser() {
@@ -83,12 +90,18 @@ void CommandParser::parse(ETLSTR cmd_string) {
     return(false);
  }
 
-// void CommandParser::run_cmd(CommandArgs args) {
-    
-// }
+void CommandParser::log_cmd_help_text(uint16_t command_id) {
+    log_response("--- Available commands on device ---");
+    for (uint16_t i = 0; i < NO_COMMANDS; i++) {
+        if (_cmd_list[i].get_cmd_id() != 0) {
+            etl::string<64> help_text(_cmd_list[i].help());
+            log_response("%d: %s", i, help_text.c_str());
+        }
+    }
+}
 
-void CommandParser::add(uint16_t command_id, void (*cmd_func_ptr)(CommandArgs args)) {
-    auto command = Command(command_id, cmd_func_ptr);
+void CommandParser::add(uint16_t command_id, void (*cmd_func_ptr)(CommandArgs args), etl::string<64> help_text) {
+    auto command = Command(command_id, cmd_func_ptr, help_text);
     
     _cmd_list[command_id] = command;
 }
@@ -108,57 +121,7 @@ void CommandParser::tick() {
     }
 
 }
-// using namespace cmd_func;
 
-void reboot(CommandArgs args) {
-    ESP.restart();
-}
-
-void status(CommandArgs args) {
-    Serial.println("Printing status...  (not implemented yet)");
-}
-
-void enable_ota(CommandArgs args) {
-    Serial.println("Enabling OTA");
-
-    ArduinoOTA
-        .onStart([]() {
-        String type;
-        if (ArduinoOTA.getCommand() == U_FLASH)
-            type = "sketch";
-        else // U_SPIFFS
-            type = "filesystem";
-
-        // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-        Serial.println("Start updating " + type);
-        })
-        .onEnd([]() {
-        Serial.println("\nEnd");
-        })
-        .onProgress([](unsigned int progress, unsigned int total) {
-        Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-        })
-        .onError([](ota_error_t error) {
-        Serial.printf("Error[%u]: ", error);
-        if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-        else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-        else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-        else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-        else if (error == OTA_END_ERROR) Serial.println("End Failed");
-        });
-
-    ArduinoOTA.begin();
-
-    for (int seconds_passed = 0; seconds_passed < 60; seconds_passed++) {
-        ArduinoOTA.handle();
-        if (seconds_passed % 10 == 0) {
-            Serial.println(seconds_passed);
-        }
-        delay(1000);
-    }
-    ArduinoOTA.end();
-    Serial.println("OTA sessions completed, no new firmware received.");
-}
 
 
 
