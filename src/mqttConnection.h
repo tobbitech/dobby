@@ -24,7 +24,6 @@ class Connection
             etl::string<64> wifi_passwd, 
             etl::string<64> mqtt_host, 
             etl::string<64> main_topic, 
-            std::function<void(char*, uint8_t*, unsigned int)> callback,
             etl::string<512> sslRootCa = "",
             etl::string<512> sslCert = "",
             etl::string<512> sslKey = "",
@@ -62,6 +61,7 @@ class Connection
         void loop_mqtt();
 
     private:
+        void _mqtt_callback(char *callbackTopic, byte *payload, unsigned int payloadLength);
         etl::string<64> _ssid;
         etl::string<64> _passwd;
         etl::string<64> _host;

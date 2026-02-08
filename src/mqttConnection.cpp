@@ -86,7 +86,6 @@ void Connection::connect(
     etl::string<64> wifi_passwd, 
     etl::string<64> mqtt_host, 
     etl::string<64> main_topic, 
-    std::function<void(char*, uint8_t*, unsigned int)> callback,
     etl::string<512> ssl_root_ca,
     etl::string<512> ssl_cert,
     etl::string<512> ssl_key,
@@ -139,7 +138,20 @@ void Connection::connect(
         log_info("Connecting to MQTT without SSL");
     }
 
-    _mqtt_client.setCallback(callback);
+    _mqtt_client.setCallback([this](char *callbackTopic, byte *payload, unsigned int payloadLength) {
+        // MQTT callback lambda function:
+        number_mqtt_callbacks++;
+        if ( new_mqtt_message ) {
+            // ignore message while the previous message is handled
+            return;
+        }
+
+        for (size_t i = 0; i < payloadLength; i++ ) {
+            received_mqtt_message.push_back( (char)payload[i] );
+        }
+        received_mqtt_topic.assign(callbackTopic);
+        new_mqtt_message = true;
+    });
     
     // set all topics
     set_mqtt_main_topic(_main_topic);
@@ -212,8 +224,6 @@ void Connection::subscribe_mqtt_topic(etl::string<64> topic)
     _mqtt_client.subscribe(topic.c_str());
     log_info("Subscribing to topic %s", topic.c_str());
 }
-
-// Timer send_network_info_timer(30, "minutes");
 
 bool Connection::is_connected() {
     if (_wifi_ok && _mqtt_ok ) {

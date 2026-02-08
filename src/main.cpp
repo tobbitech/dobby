@@ -31,7 +31,7 @@ void setup() {
     WIFI_PW,
     "192.168.2.7",
     "test",
-    callback,
+    // callback,
     "",
     "",
     "",
@@ -47,18 +47,4 @@ void loop() {
   cmd.tick();
   conn.maintain();
   
-}
-
-void callback(char *callbackTopic, byte *payload, unsigned int payloadLength) {
-  conn.number_mqtt_callbacks++;
-  if ( conn.new_mqtt_message ) {
-    // ignore message while the previous message is handled
-    return;
-  }
-
-  for (size_t i = 0; i < payloadLength; i++ ) {
-    conn.received_mqtt_message.push_back( (char)payload[i] );
-  }
-  conn.received_mqtt_topic.assign(callbackTopic);
-  conn.new_mqtt_message = true;
 }
