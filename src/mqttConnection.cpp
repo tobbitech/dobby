@@ -79,9 +79,9 @@ void Connection::log_status()
     log_info("IP: %s", WiFi.localIP().toString());
 }
 
-void Connection::set_status_interval(Timer t) {
-    _status_interval_timer = t;
-}
+// void Connection::set_status_interval(Timer t) {
+//     _status_interval_timer = t;
+// }
 
 void Connection::connect(
     etl::string<64> wifi_ssid, 
@@ -145,7 +145,7 @@ void Connection::connect(
     
     wifi_mqtt_connect();
 
-    _status_interval_timer.set(30, "minutes");
+    // _status_interval_timer.set(30, "minutes");
 }
 
 void Connection::wifi_mqtt_connect() {

@@ -7,7 +7,7 @@
 #include <WiFiUdp.h>
 #include <WiFiClientSecure.h>
 #include <WiFiClient.h>
-#include "timer.h"
+// #include "timer.h"
 #include "logging.h"
 #include <etl/string.h>
 #include <etl/to_arithmetic.h>
@@ -64,7 +64,7 @@ class Connection
         // void ota_nable();
         // void otaDisable();
         // void otaLoop();
-        void set_status_interval(Timer t);
+        // void set_status_interval(Timer t);
         bool is_connected();
         etl::string<128> received_mqtt_topic;
         etl::string<256> received_mqtt_message; // mqtt callback stores payload in this variable
@@ -101,7 +101,7 @@ class Connection
         int _mqtt_led_pin;
         WiFiUDP _ntp_udp;
         NTPClient _time_client(WiFiUDP);
-        Timer _status_interval_timer;
+        // Timer _status_interval_timer;
 };
 
 // void WiFiStationWifiReady(WiFiEvent_t event, WiFiEventInfo_t info) {
