@@ -19,15 +19,17 @@ void setup() {
   Serial.begin(112500);
   Serial.println("Hi there!");
 
-  cmd.add(1, list_commands, "Lists available commands");
-  cmd.add(2, reboot, "Reboots device");
-  cmd.add(3, status, "Shows status of device");
-  cmd.add(4, enable_ota, "Sets device in OTA mode for 60 seconds");
+  cmd.add(1, CMD::list_commands, "Lists available commands");
+  cmd.add(2, CMD::reboot, "Reboot device");
+  cmd.add(3, CMD::status, "Shows status of device");
+  cmd.add(4, CMD::enable_ota, "Sets device in OTA mode for 60 seconds");
+  cmd.add(5, CMD::set_log_level, "Set log level. Arg1: DEBUG INFO WARNING ERROR CRITICAL RESPONSE");
+  cmd.add(6, CMD::log_ip, "Show device IP address");
+  cmd.add(7, CMD::log_mac, "Show device hardware address");
 
-  conn.connect(
-    WIFI_SSID,
+  conn.connect( WIFI_SSID,
     WIFI_PW,
-    "192.168.2.4",
+    "192.168.2.7",
     "test",
     callback,
     "",

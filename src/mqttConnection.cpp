@@ -259,7 +259,7 @@ void Connection::maintain()
         }
 
         log_info("MQTT message %d (%d bytes) on %s", number_mqtt_callbacks, received_mqtt_message.size(), received_mqtt_topic.c_str());
-        log_debug("%s", received_mqtt_message.c_str());
+        log_debug("Received data: %s", received_mqtt_message.c_str());
 
         // handle commands from MQTT
         if (received_mqtt_topic == _command_topic) {
@@ -304,17 +304,6 @@ int Connection::publish(etl::string<128> topic, etl::string<256> message)
 void Connection::publish_log(etl::string<256> log_message) {
     publish(_log_topic, log_message);
 }
-
-// void Connection::publishTelemetry(String message) {
-//     Connection::publish(_jsonTopic, message);
-// }
-
-// void Connection::publishCommandResponse(String message) {
-//     // publish command response
-//     Connection::publish(_crTopic, message);
-//     // publish command response on telemetry topic
-//     // Connection::publishTelemetry(message);
-// }
 
 unsigned long Connection::get_timestamp()
 {

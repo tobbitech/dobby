@@ -48,9 +48,10 @@ class CommandParser {
         ETLSTR _partial_cmd_from_serial;
 };
 
+bool check_args(CommandArgs args, uint8_t n);
 
 // namespace cmd_func {
-    void reboot(CommandArgs args);
-    void status(CommandArgs args);
-    void enable_ota(CommandArgs args);
+    // void reboot(CommandArgs args);
+    // void status(CommandArgs args);
+    // void enable_ota(CommandArgs args);
 // };

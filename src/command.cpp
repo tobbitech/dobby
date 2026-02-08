@@ -123,5 +123,14 @@ void CommandParser::tick() {
 }
 
 
-
+bool check_args(CommandArgs args, uint8_t n) {
+    if (args.n_args < n) {
+        log_error("Too few arguments. Got %d, expected %d", args.n_args, n);
+        return false;
+    }
+    else if (args.n_args > n) {
+        log_warning("Too many arguments. Got %d, expected %d", args.n_args, n);
+    }
+    return true;
+}
 

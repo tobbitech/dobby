@@ -2,76 +2,98 @@
 #include <Arduino.h>
 #include <ArduinoOTA.h>
 #include <command.h>
+#include "logging.h"
 
 extern CommandParser cmd;
 
-void list_commands(CommandArgs args) {
-    cmd.log_cmd_help_text();
-}
+namespace CMD {
 
-void reboot(CommandArgs args) {
-    ESP.restart();
-}
-
-void status(CommandArgs args) {
-    Serial.println("Printing status...  (not implemented yet)");
-}
-
-void enable_ota(CommandArgs args) {
-    Serial.println("Enabling OTA");
-
-    ArduinoOTA
-        .onStart([]() {
-        String type;
-        if (ArduinoOTA.getCommand() == U_FLASH)
-            type = "sketch";
-        else // U_SPIFFS
-            type = "filesystem";
-
-        // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-        Serial.println("Start updating " + type);
-        })
-        .onEnd([]() {
-        Serial.println("\nEnd");
-        })
-        .onProgress([](unsigned int progress, unsigned int total) {
-        Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-        })
-        .onError([](ota_error_t error) {
-        Serial.printf("Error[%u]: ", error);
-        if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-        else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-        else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-        else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-        else if (error == OTA_END_ERROR) Serial.println("End Failed");
-        });
-
-    ArduinoOTA.begin();
-
-    for (int seconds_passed = 0; seconds_passed < 60; seconds_passed++) {
-        ArduinoOTA.handle();
-        if (seconds_passed % 10 == 0) {
-            Serial.println(seconds_passed);
-        }
-        delay(1000);
+    void list_commands(CommandArgs args) {
+        cmd.log_cmd_help_text();
     }
-    ArduinoOTA.end();
-    Serial.println("OTA sessions completed, no new firmware received.");
-}
 
-void set_wifi(CommandArgs args) {
-    // Sets a wifi and SSID and password
-    // arg 1: SSID
-    // arg 2: password
+    void reboot(CommandArgs args) {
+        ESP.restart();
+    }
 
-    log_warning("Settint wifi not implemented yet");
-}
+    void status(CommandArgs args) {
+        Serial.println("Printing status...  (not implemented yet)");
+    }
+
+    void enable_ota(CommandArgs args) {
+        log_response("Enabling OTA");
+
+        ArduinoOTA
+            .onStart([]() {
+            etl::string<16> type;
+            if (ArduinoOTA.getCommand() == U_FLASH)
+                type = "sketch";
+            else // U_SPIFFS
+                type = "filesystem";
+
+            // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+            log_response("Start updating %s", type);
+            })
+            .onEnd([]() {
+            log_response("Data transmission completed");
+            })
+            .onProgress([](unsigned int progress, unsigned int total) {
+            log_response("Progress: %u%%\r", (progress / (total / 100)));
+            })
+            .onError([](ota_error_t error) {
+            log_error("Error[%u]: ", error);
+            if (error == OTA_AUTH_ERROR) log_error("Auth Failed");
+            else if (error == OTA_BEGIN_ERROR) log_error("Begin Failed");
+            else if (error == OTA_CONNECT_ERROR) log_error("Connect Failed");
+            else if (error == OTA_RECEIVE_ERROR) log_error("Receive Failed");
+            else if (error == OTA_END_ERROR) log_error("End Failed");
+            });
+
+        ArduinoOTA.begin();
+
+        for (int seconds_passed = 0; seconds_passed < 60; seconds_passed++) {
+            ArduinoOTA.handle();
+            if (seconds_passed % 10 == 0) {
+                log_info("OTA active for %d seconds", seconds_passed);
+            }
+            delay(1000);
+        }
+        ArduinoOTA.end();
+        log_error("OTA sessions completed, no new firmware received.");
+    }
+
+    void set_wifi(CommandArgs args) {
+        // Sets a wifi and SSID and password
+        // arg 1: SSID
+        // arg 2: password
+
+        log_warning("Settint wifi not implemented yet");
+    }
 
 
-void log_ip(CommandArgs args) {
+    void set_log_level(CommandArgs args ) {
+        if (! check_args(args, 1)) { return; }
 
-}
+        if (args.argv[0] == "DEBUG") {
+            set_log_level(log_severity::DEBUG);
+        } else if (args.argv[0] == "INFO") {
+            set_log_level(log_severity::INFO);
+        } else if (args.argv[0] == "WARNING") {
+            set_log_level(log_severity::WARNING);
+        } else if (args.argv[0] == "ERROR") {
+            set_log_level(log_severity::ERROR);
+        } else if (args.argv[0] == "CRITICAL") {
+            set_log_level(log_severity::CRITICAL);
+        } else if (args.argv[0] == "RESPONSE") {
+            set_log_level(log_severity::RESPONSE);
+        }
+    }
 
-void log_mac(CommandArgs args) {
+    void log_ip(CommandArgs args) {
+        log_response("IP: %s", WiFi.localIP().toString());
+    }
 
+    void log_mac(CommandArgs args) {
+        log_response("MAC: %s", WiFi.macAddress().c_str());
+    }
 }
