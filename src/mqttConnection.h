@@ -11,6 +11,7 @@
 #include "logging.h"
 #include <etl/string.h>
 #include <etl/to_arithmetic.h>
+#include "command.h"
 
 // #define ARDUINO_IOT_USE_SSL
 

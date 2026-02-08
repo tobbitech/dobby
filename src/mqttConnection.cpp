@@ -1,6 +1,8 @@
 
 #include "mqttConnection.h"
 
+extern CommandParser cmd;
+
 Connection::Connection()
 {
     _wifi_ok = false;
@@ -261,6 +263,19 @@ void Connection::maintain()
     if ( new_mqtt_message) {
         log_info("MQTT message %d (%d bytes) on %s", number_mqtt_callbacks, received_mqtt_message.size(), received_mqtt_topic.c_str());
         log_debug("%s", received_mqtt_message.c_str());
+
+        // handle commands from MQTT
+        if (received_mqtt_topic == _command_topic) {
+            // message is a command
+            cmd.parse(received_mqtt_message);
+        }
+
+
+
+
+
+
+
         received_mqtt_message.clear();
         received_mqtt_topic.clear();
         new_mqtt_message = false;
