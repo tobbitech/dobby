@@ -7,6 +7,12 @@ Connection::Connection()
     _mqtt_ok = false;
     pinMode(_wifi_led_pin, OUTPUT);
     pinMode(_mqtt_led_pin, OUTPUT);
+
+    new_mqtt_message = false;
+    number_mqtt_callbacks = 0;
+    received_mqtt_topic.clear();
+    received_mqtt_message.clear();
+
 }
 
 void Connection::set_wifi_ssid(etl::string<64> ssid) {
@@ -144,7 +150,7 @@ void Connection::connect(
 
 void Connection::wifi_mqtt_connect() {
     // initalization function for establishing wifi connection
-    log_info("Connecting to %s", _ssid);
+    log_info("Connecting to %s", _ssid.c_str() );
     WiFi.mode(WIFI_STA);
     
     // setup Wifi events
@@ -189,7 +195,7 @@ void Connection::wifi_mqtt_connect() {
     _wifi_ok = true;
     set_status_leds();
 
-    log_info("Wifi connected. IP: %s mac: %s", WiFi.localIP().toString(), WiFi.macAddress());
+    log_info("Wifi connected. IP: %s mac: %s", WiFi.localIP().toString(), WiFi.macAddress().c_str());
 
     delay(2000); // letting wifi connection stabilize before connecting to MQTT - bugfix?
 
@@ -207,9 +213,16 @@ void Connection::subscribe_mqtt_topic(etl::string<64> topic)
 
 // Timer send_network_info_timer(30, "minutes");
 
+bool Connection::is_connected() {
+    if (_wifi_ok && _mqtt_ok ) {
+        return true;
+    }
+    return false;
+}
+
 void Connection::maintain()
 {
-    _mqtt_client.loop();
+    loop_mqtt();
 
     // check mqtt connection
     if ( ! _mqtt_client.state() == 0 ) {
@@ -244,6 +257,18 @@ void Connection::maintain()
     //     _mqtt_client.publish((_mainTopic + "/ip").c_str(), WiFi.localIP().toString().c_str());
     //     _mqtt_client.publish((_mainTopic + "/mac").c_str(), WiFi.macAddress().c_str());
     // }
+
+    if ( new_mqtt_message) {
+        log_info("MQTT message %d (%d bytes) on %s", number_mqtt_callbacks, received_mqtt_message.size(), received_mqtt_topic.c_str());
+        log_debug("%s", received_mqtt_message.c_str());
+        received_mqtt_message.clear();
+        received_mqtt_topic.clear();
+        new_mqtt_message = false;
+    }
+}
+
+void Connection::loop_mqtt() {
+    _mqtt_client.loop();
 }
 
 PubSubClient Connection::get_mqtt_client()
@@ -268,8 +293,8 @@ int Connection::publish(etl::string<128> topic, etl::string<256> message)
     
 }
 
-void Connection::publish_log(etl::string<256> message) {
-    publish(_log_topic, message);
+void Connection::publish_log(etl::string<256> log_message) {
+    publish(_log_topic, log_message);
 }
 
 // void Connection::publishTelemetry(String message) {

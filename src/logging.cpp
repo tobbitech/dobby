@@ -58,8 +58,9 @@ void log(etl::string<LOG_STRING_LENGTH> message, log_severity severity, bool onl
 
     Serial.println(modified_log_message.c_str());
     
-    if (!only_serial) {
+    if (!only_serial && conn.is_connected() ) {
         conn.publish_log(modified_log_message );
+        conn.loop_mqtt();
     }
 
     if (store_in_nvm) {

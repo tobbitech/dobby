@@ -65,6 +65,12 @@ class Connection
         // void otaDisable();
         // void otaLoop();
         void set_status_interval(Timer t);
+        bool is_connected();
+        etl::string<128> received_mqtt_topic;
+        etl::string<256> received_mqtt_message; // mqtt callback stores payload in this variable
+        bool new_mqtt_message;
+        uint32_t number_mqtt_callbacks;
+        void loop_mqtt();
 
     private:
         // void(*commandFunctionPointer)(etl::string<64>, int, JsonArray, bool);
