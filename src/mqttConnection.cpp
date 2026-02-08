@@ -51,6 +51,8 @@ void Connection::set_mqtt_main_topic(etl::string<64> main_topic) {
     _command_topic.append("/command");   // topic for receiving commands
     _log_topic = main_topic;
     _log_topic.append("/log");           // topic wher log is sent
+    _heartbeat_topic = main_topic;
+    _heartbeat_topic.append("/heartbeat");           // topic where heartbeat is sent
 }
 
 void Connection::set_status_leds()
@@ -272,6 +274,15 @@ void Connection::maintain()
         received_mqtt_message.clear();
         received_mqtt_topic.clear();
         new_mqtt_message = false;
+    }
+
+    // send heartbeat if it is time
+    if ( (millis() - _last_heartbeat_millis) > HEARTBEAT_INTERVAL_MS ) {
+        etl::string<32> heartbeat_string;
+        etl::to_string(millis(), heartbeat_string);
+        publish(_heartbeat_topic, heartbeat_string);
+        log_debug("Heartbeat %s", heartbeat_string);
+        _last_heartbeat_millis = millis();
     }
 }
 

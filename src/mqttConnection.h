@@ -13,6 +13,7 @@
 #include "command.h"
 
 // #define ARDUINO_IOT_USE_SSL
+#define HEARTBEAT_INTERVAL_MS 5000
 
 class Connection 
 {
@@ -79,6 +80,7 @@ class Connection
         PubSubClient _mqtt_client;
         etl::string<64> _command_topic;
         etl::string<64> _log_topic;
+        etl::string<64> _heartbeat_topic;
         etl::string<64> _ssl_root_ca;
         etl::string<64> _ssl_key;
         etl::string<64> _ssl_cert;
@@ -89,6 +91,7 @@ class Connection
         WiFiUDP _ntp_udp;
         NTPClient _time_client(WiFiUDP);
         uint32_t _last_number_of_callbacks;
+        uint32_t _last_heartbeat_millis;
 };
 
 void WiFiStationWifiReady(WiFiEvent_t event, WiFiEventInfo_t info);
