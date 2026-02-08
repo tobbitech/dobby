@@ -10,6 +10,7 @@ Connection::Connection()
 
     new_mqtt_message = false;
     number_mqtt_callbacks = 0;
+     _last_number_of_callbacks = 0;
     received_mqtt_topic.clear();
     received_mqtt_message.clear();
 }
@@ -33,7 +34,7 @@ void Connection::set_mqtt_client_name(etl::string<64> client_name) {
     _client_name = client_name;
 }
 
-// void setSslCa(String ca) {
+// void set_ssl_ca(etl::string<64> ca) {
 //     _wifi_client.setCACert(ca);
 // }
 
@@ -77,10 +78,6 @@ void Connection::log_status()
     log_info("RSSI: %d" + WiFi.RSSI());
     log_info("IP: %s", WiFi.localIP().toString());
 }
-
-// void Connection::set_status_interval(Timer t) {
-//     _status_interval_timer = t;
-// }
 
 void Connection::connect(
     etl::string<64> wifi_ssid, 
@@ -157,24 +154,24 @@ void Connection::wifi_mqtt_connect() {
     WiFi.mode(WIFI_STA);
     
     // setup Wifi events
-    // WiFi.onEvent(WiFiStationWifiReady, ARDUINO_EVENT_WIFI_READY);
-    // WiFi.onEvent(WiFiStationWifiScanDone, ARDUINO_EVENT_WIFI_SCAN_DONE);
-    // WiFi.onEvent(WiFiStationStaStart, ARDUINO_EVENT_WIFI_STA_START);
-    // WiFi.onEvent(WiFiStationStaStop, ARDUINO_EVENT_WIFI_STA_STOP);
-    // WiFi.onEvent(WiFiStationConnected, ARDUINO_EVENT_WIFI_STA_CONNECTED);
-    // WiFi.onEvent(WiFiStationDisconnected, ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
-    // WiFi.onEvent(WiFiStationAuthmodeChange, ARDUINO_EVENT_WIFI_STA_AUTHMODE_CHANGE);
-    // WiFi.onEvent(WiFiStationGotIp, ARDUINO_EVENT_WIFI_STA_GOT_IP);
-    // WiFi.onEvent(WiFiStationGotIp6, ARDUINO_EVENT_WIFI_STA_GOT_IP6);
-    // WiFi.onEvent(WiFiStationLostIp, ARDUINO_EVENT_WIFI_STA_LOST_IP);
-    // WiFi.onEvent(WiFiApStart, ARDUINO_EVENT_WIFI_AP_START);
-    // WiFi.onEvent(WiFiApStop, ARDUINO_EVENT_WIFI_AP_STOP);
-    // WiFi.onEvent(WiFiApStaConnected, ARDUINO_EVENT_WIFI_AP_STACONNECTED);
-    // WiFi.onEvent(WiFiApStaDisconnected, ARDUINO_EVENT_WIFI_AP_STADISCONNECTED);
-    // WiFi.onEvent(WiFiApStaIpasSigned, ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED);
-    // WiFi.onEvent(WiFiApProbeEwqRecved, ARDUINO_EVENT_WIFI_AP_PROBEREQRECVED);
-    // WiFi.onEvent(WiFiApGotIp6, ARDUINO_EVENT_WIFI_AP_GOT_IP6);
-    // WiFi.onEvent(WiFiFtmReport, ARDUINO_EVENT_WIFI_FTM_REPORT);
+    WiFi.onEvent(WiFiStationWifiReady, ARDUINO_EVENT_WIFI_READY);
+    WiFi.onEvent(WiFiStationWifiScanDone, ARDUINO_EVENT_WIFI_SCAN_DONE);
+    WiFi.onEvent(WiFiStationStaStart, ARDUINO_EVENT_WIFI_STA_START);
+    WiFi.onEvent(WiFiStationStaStop, ARDUINO_EVENT_WIFI_STA_STOP);
+    WiFi.onEvent(WiFiStationConnected, ARDUINO_EVENT_WIFI_STA_CONNECTED);
+    WiFi.onEvent(WiFiStationDisconnected, ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
+    WiFi.onEvent(WiFiStationAuthmodeChange, ARDUINO_EVENT_WIFI_STA_AUTHMODE_CHANGE);
+    WiFi.onEvent(WiFiStationGotIp, ARDUINO_EVENT_WIFI_STA_GOT_IP);
+    WiFi.onEvent(WiFiStationGotIp6, ARDUINO_EVENT_WIFI_STA_GOT_IP6);
+    WiFi.onEvent(WiFiStationLostIp, ARDUINO_EVENT_WIFI_STA_LOST_IP);
+    WiFi.onEvent(WiFiApStart, ARDUINO_EVENT_WIFI_AP_START);
+    WiFi.onEvent(WiFiApStop, ARDUINO_EVENT_WIFI_AP_STOP);
+    WiFi.onEvent(WiFiApStaConnected, ARDUINO_EVENT_WIFI_AP_STACONNECTED);
+    WiFi.onEvent(WiFiApStaDisconnected, ARDUINO_EVENT_WIFI_AP_STADISCONNECTED);
+    WiFi.onEvent(WiFiApStaIpasSigned, ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED);
+    WiFi.onEvent(WiFiApProbeEwqRecved, ARDUINO_EVENT_WIFI_AP_PROBEREQRECVED);
+    WiFi.onEvent(WiFiApGotIp6, ARDUINO_EVENT_WIFI_AP_GOT_IP6);
+    WiFi.onEvent(WiFiFtmReport, ARDUINO_EVENT_WIFI_FTM_REPORT);
 
 
     WiFi.begin(_ssid.c_str(), _passwd.c_str());
@@ -255,13 +252,12 @@ void Connection::maintain()
     }
     set_status_leds();
 
-    // if (_status_interval_timer.is_done() ) {
-    // // if (send_network_info_timer.is_done() ) {    
-    //     _mqtt_client.publish((_mainTopic + "/ip").c_str(), WiFi.localIP().toString().c_str());
-    //     _mqtt_client.publish((_mainTopic + "/mac").c_str(), WiFi.macAddress().c_str());
-    // }
-
     if ( new_mqtt_message) {
+        // check if any callbacks happened while parsing last message
+        if ( ! (number_mqtt_callbacks == _last_number_of_callbacks + 1) ) {
+            log_warning("%d mqtt callbacks ignored", number_mqtt_callbacks - _last_number_of_callbacks);
+        }
+
         log_info("MQTT message %d (%d bytes) on %s", number_mqtt_callbacks, received_mqtt_message.size(), received_mqtt_topic.c_str());
         log_debug("%s", received_mqtt_message.c_str());
 
@@ -271,12 +267,8 @@ void Connection::maintain()
             cmd.parse(received_mqtt_message);
         }
 
-
-
-
-
-
-
+        // clear variables and get ready for next message
+        _last_number_of_callbacks = number_mqtt_callbacks;
         received_mqtt_message.clear();
         received_mqtt_topic.clear();
         new_mqtt_message = false;
@@ -342,3 +334,74 @@ etl::string<64> Connection::get_timestamp_millis()
     return(timestamp);
 }
 
+void WiFiStationWifiReady(WiFiEvent_t event, WiFiEventInfo_t info) {
+    log_debug("ARDUINO_EVENT_WIFI_READY");
+}
+
+void WiFiStationWifiScanDone(WiFiEvent_t event, WiFiEventInfo_t info) {
+    log_debug("ARDUINO_EVENT_WIFI_SCAN_DONE");
+}
+
+void WiFiStationStaStart(WiFiEvent_t event, WiFiEventInfo_t info) {
+    log_debug("ARDUINO_EVENT_WIFI_STA_START");
+}
+
+void WiFiStationStaStop(WiFiEvent_t event, WiFiEventInfo_t info) {
+    log_debug("ARDUINO_EVENT_WIFI_STA_START");
+}
+
+void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info) {
+    log_debug("ARDUINO_EVENT_WIFI_STA_CONNECTED");
+}
+
+void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info) {
+    log_debug("ARDUINO_EVENT_WIFI_STA_DISCONNECTED");
+}
+
+void WiFiStationAuthmodeChange(WiFiEvent_t event, WiFiEventInfo_t info) {
+    log_debug("ARDUINO_EVENT_WIFI_AUTH_MODE_CHANGED");
+}
+
+void WiFiStationGotIp(WiFiEvent_t event, WiFiEventInfo_t info) {
+    log_debug("ARDUINO_EVENT_WIFI_STA_GOT_IP");
+}
+
+void WiFiStationGotIp6(WiFiEvent_t event, WiFiEventInfo_t info) {
+    log_debug("ARDUINO_EVENT_WIFI_STA_GOT_IP_6");
+}
+
+void WiFiStationLostIp(WiFiEvent_t event, WiFiEventInfo_t info) {
+    log_debug("ARDUINO_EVENT_WIFI_STA_LOST_IP");
+}
+
+void WiFiApStart(WiFiEvent_t event, WiFiEventInfo_t info) {
+    log_debug("ARDUINO_EVENT_WIFI_AP_START");
+}
+
+void WiFiApStop(WiFiEvent_t event, WiFiEventInfo_t info) {
+    log_debug("ARDUINO_EVENT_WIFI_AP_STOP");
+}
+
+void WiFiApStaConnected(WiFiEvent_t event, WiFiEventInfo_t info) {
+    log_debug("ARDUINO_EVENT_WIFI_AP_STACONNECTED");
+}
+
+void WiFiApStaDisconnected(WiFiEvent_t event, WiFiEventInfo_t info) {
+    log_debug("ARDUINO_EVENT_WIFI_AP_STADISCONNECTED");
+}
+
+void WiFiApStaIpasSigned(WiFiEvent_t event, WiFiEventInfo_t info) {
+    log_debug("ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED");
+}
+
+void WiFiApProbeEwqRecved(WiFiEvent_t event, WiFiEventInfo_t info) {
+    log_debug("ARDUINO_EVENT_WIFI_AP_PROBEREQRECVED");
+}
+
+void WiFiApGotIp6(WiFiEvent_t event, WiFiEventInfo_t info) {
+    log_debug("ARDUINO_EVENT_WIFI_AP_GOT_IP6");
+}
+
+void WiFiFtmReport(WiFiEvent_t event, WiFiEventInfo_t info) {
+    log_debug("ARDUINO_EVENT_WIFI_FTM_REPORT");
+}

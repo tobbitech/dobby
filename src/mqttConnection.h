@@ -7,7 +7,6 @@
 #include <WiFiUdp.h>
 #include <WiFiClientSecure.h>
 #include <WiFiClient.h>
-// #include "timer.h"
 #include "logging.h"
 #include <etl/string.h>
 #include <etl/to_arithmetic.h>
@@ -38,16 +37,8 @@ class Connection
         void maintain();
         PubSubClient get_mqtt_client();
         void log_status();
-        // void printAllParams();
-        // void sendStatusToDebug();
-        // void debug(etl::string<64> message);
-        // void debug(int message);
-        // void debug(unsigned long message);
-        // void debug(float message, int decimalPlaces);
         int publish(etl::string<128> topic, etl::string<256> message);
         void publish_log(etl::string<256>);
-        // void publish_telemetry(etl::string<64> message);
-        // void publish_command_response(etl::string<64> message);
         void set_status_leds();
         unsigned long get_timestamp();
         etl::string<64> get_timestamp_millis();
@@ -59,13 +50,9 @@ class Connection
         void set_mqtt_client_name(etl::string<64> clientName);
         void set_mqtt_main_topic(etl::string<64> mainTopic);
         void subscribe_mqtt_topic(etl::string<64> topic);
-        void set_ssl_ca(etl::string<64> ca);
-        void set_ssl_cert(etl::string<64> cert);
-        void set_ssl_key(etl::string<64> key);
-        // void ota_nable();
-        // void otaDisable();
-        // void otaLoop();
-        // void set_status_interval(Timer t);
+        // void set_ssl_ca(etl::string<64> ca);
+        // void set_ssl_cert(etl::string<64> cert);
+        // void set_ssl_key(etl::string<64> key);
         bool is_connected();
         etl::string<128> received_mqtt_topic;
         etl::string<256> received_mqtt_message; // mqtt callback stores payload in this variable
@@ -74,7 +61,6 @@ class Connection
         void loop_mqtt();
 
     private:
-        // void(*commandFunctionPointer)(etl::string<64>, int, JsonArray, bool);
         etl::string<64> _ssid;
         etl::string<64> _passwd;
         etl::string<64> _host;
@@ -102,77 +88,24 @@ class Connection
         int _mqtt_led_pin;
         WiFiUDP _ntp_udp;
         NTPClient _time_client(WiFiUDP);
-        // Timer _status_interval_timer;
+        uint32_t _last_number_of_callbacks;
 };
 
-// void WiFiStationWifiReady(WiFiEvent_t event, WiFiEventInfo_t info) {
-//     log_debug("ARDUINO_EVENT_WIFI_READY");
-// }
-
-// void WiFiStationWifiScanDone(WiFiEvent_t event, WiFiEventInfo_t info) {
-//     log_debug("ARDUINO_EVENT_WIFI_SCAN_DONE");
-// }
-
-// void WiFiStationStaStart(WiFiEvent_t event, WiFiEventInfo_t info) {
-//     log_debug("ARDUINO_EVENT_WIFI_STA_START");
-// }
-
-// void WiFiStationStaStop(WiFiEvent_t event, WiFiEventInfo_t info) {
-//     log_debug("ARDUINO_EVENT_WIFI_STA_START");
-// }
-
-// void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info) {
-//     log_debug("ARDUINO_EVENT_WIFI_STA_CONNECTED");
-// }
-
-// void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info) {
-//     log_debug("ARDUINO_EVENT_WIFI_STA_DISCONNECTED");
-// }
-
-// void WiFiStationAuthmodeChange(WiFiEvent_t event, WiFiEventInfo_t info) {
-//     log_debug("ARDUINO_EVENT_WIFI_AUTH_MODE_CHANGED");
-// }
-
-// void WiFiStationGotIp(WiFiEvent_t event, WiFiEventInfo_t info) {
-//     log_debug("ARDUINO_EVENT_WIFI_STA_GOT_IP");
-// }
-
-// void WiFiStationGotIp6(WiFiEvent_t event, WiFiEventInfo_t info) {
-//     log_debug("ARDUINO_EVENT_WIFI_STA_GOT_IP_6");
-// }
-
-// void WiFiStationLostIp(WiFiEvent_t event, WiFiEventInfo_t info) {
-//     log_debug("ARDUINO_EVENT_WIFI_STA_LOST_IP");
-// }
-
-// void WiFiApStart(WiFiEvent_t event, WiFiEventInfo_t info) {
-//     log_debug("ARDUINO_EVENT_WIFI_AP_START");
-// }
-
-// void WiFiApStop(WiFiEvent_t event, WiFiEventInfo_t info) {
-//     log_debug("ARDUINO_EVENT_WIFI_AP_STOP");
-// }
-
-// void WiFiApStaConnected(WiFiEvent_t event, WiFiEventInfo_t info) {
-//     log_debug("ARDUINO_EVENT_WIFI_AP_STACONNECTED");
-// }
-
-// void WiFiApStaDisconnected(WiFiEvent_t event, WiFiEventInfo_t info) {
-//     log_debug("ARDUINO_EVENT_WIFI_AP_STADISCONNECTED");
-// }
-
-// void WiFiApStaIpasSigned(WiFiEvent_t event, WiFiEventInfo_t info) {
-//     log_debug("ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED");
-// }
-
-// void WiFiApProbeEwqRecved(WiFiEvent_t event, WiFiEventInfo_t info) {
-//     log_debug("ARDUINO_EVENT_WIFI_AP_PROBEREQRECVED");
-// }
-
-// void WiFiApGotIp6(WiFiEvent_t event, WiFiEventInfo_t info) {
-//     log_debug("ARDUINO_EVENT_WIFI_AP_GOT_IP6");
-// }
-
-// void WiFiFtmReport(WiFiEvent_t event, WiFiEventInfo_t info) {
-//     log_debug("ARDUINO_EVENT_WIFI_FTM_REPORT");
-// }
+void WiFiStationWifiReady(WiFiEvent_t event, WiFiEventInfo_t info);
+void WiFiStationWifiScanDone(WiFiEvent_t event, WiFiEventInfo_t info);
+void WiFiStationStaStart(WiFiEvent_t event, WiFiEventInfo_t info);
+void WiFiStationStaStop(WiFiEvent_t event, WiFiEventInfo_t info);
+void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info);
+void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info);
+void WiFiStationAuthmodeChange(WiFiEvent_t event, WiFiEventInfo_t info);
+void WiFiStationGotIp(WiFiEvent_t event, WiFiEventInfo_t info);
+void WiFiStationGotIp6(WiFiEvent_t event, WiFiEventInfo_t info);
+void WiFiStationLostIp(WiFiEvent_t event, WiFiEventInfo_t info);
+void WiFiApStart(WiFiEvent_t event, WiFiEventInfo_t info);
+void WiFiApStop(WiFiEvent_t event, WiFiEventInfo_t info);
+void WiFiApStaConnected(WiFiEvent_t event, WiFiEventInfo_t info);
+void WiFiApStaDisconnected(WiFiEvent_t event, WiFiEventInfo_t info);
+void WiFiApStaIpasSigned(WiFiEvent_t event, WiFiEventInfo_t info);
+void WiFiApProbeEwqRecved(WiFiEvent_t event, WiFiEventInfo_t info);
+void WiFiApGotIp6(WiFiEvent_t event, WiFiEventInfo_t info);
+void WiFiFtmReport(WiFiEvent_t event, WiFiEventInfo_t info);
