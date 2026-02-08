@@ -7,14 +7,11 @@ Connection::Connection()
 {
     _wifi_ok = false;
     _mqtt_ok = false;
-    pinMode(_wifi_led_pin, OUTPUT);
-    pinMode(_mqtt_led_pin, OUTPUT);
 
     new_mqtt_message = false;
     number_mqtt_callbacks = 0;
     received_mqtt_topic.clear();
     received_mqtt_message.clear();
-
 }
 
 void Connection::set_wifi_ssid(etl::string<64> ssid) {
@@ -117,6 +114,10 @@ void Connection::connect(
     
     // #ifdef ARDUINO_IOT_USE_SSL
     // #endif
+
+    // set pin mode for LEDS
+    pinMode(_wifi_led_pin, OUTPUT);
+    pinMode(_mqtt_led_pin, OUTPUT);
 
     if (_use_ssl) {
         log_info("Setting CA cert (using SSL)");

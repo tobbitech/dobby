@@ -14,6 +14,8 @@ void setup() {
 
   set_log_level(log_severity::DEBUG);
 
+  pinMode(39, OUTPUT); // fix dim LED
+
   Serial.begin(112500);
   Serial.println("Hi there!");
 
@@ -33,8 +35,8 @@ void setup() {
     "",
     1883,
     "TestClient",
-    14,
-    15,
+    21,
+    47,
     false
   );
 }
