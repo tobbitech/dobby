@@ -281,7 +281,12 @@ void Connection::maintain()
 
         // Handle actions
         // Run command corresponding to the action topic
-
+        for (size_t i = 0; i < _action_list.size(); i++) {
+            if (received_mqtt_topic == _action_list[i].topic) {
+                log_info("Running action for topic %s", received_mqtt_topic.c_str());
+                _action_list[i].function(received_mqtt_message);
+            }
+        }
 
 
 
@@ -348,6 +353,19 @@ etl::string<64> Connection::get_timestamp_millis()
     etl::to_string(seconds, timestamp, etl::format_spec(), false);
     timestamp.append("000");
     return(timestamp);
+}
+
+void Connection::register_action(etl::string<64> topic, std::function<void(etl::string<16>)> func) {
+    // register an action by topic. When a message is received on this topic, 
+    // the new_action flag is set to true, and the contents of the MQTT action
+    // message is stored on action_string for parsing at next tick.
+
+    Action action;
+    // action.index = _action_list.size();
+    action.topic = topic;
+    action.function = func;
+    // action.new_action = false;
+    _action_list.push_back(action);
 }
 
 void WiFiStationWifiReady(WiFiEvent_t event, WiFiEventInfo_t info) {

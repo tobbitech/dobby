@@ -1,0 +1,77 @@
+#pragma once
+
+#include <Arduino.h>
+
+// LED pins
+#define LED_GAUGE_H5 4
+#define LED_GAUGE_H4 5
+#define LED_GAUGE_H3 6
+#define LED_GAUGE_H2 7
+#define LED_GAUGE_H1 15
+#define LED_GAUGE_OK 16
+#define LED_GAUGE_L1 10
+#define LED_GAUGE_L2 11
+#define LED_GAUGE_L3 12
+#define LED_GAUGE_L4 13
+#define LED_GAUGE_L5 14
+
+#define LED_TEST_CABLE_OK 21
+#define LED_TEST_CABLE_FAIL 39
+#define LED_TEST_NO_LOAD_OK 47
+#define LED_TEST_NO_LOAD_FAIL 40
+#define LED_TEST_LOW_LOAD_OK 48
+#define LED_TEST_LOW_LOAD_FAIL 41
+#define LED_TEST_HIGH_LOAD_OK 38
+#define LED_TEST_HIGH_LOAD_FAIL 42
+
+// communication pins
+#define I2C_SDA 8
+#define I2C_SCL 9
+#define UART_TX1 17
+#define UART_RX1 18
+
+// inpout pins
+#define SWITCH_PIN_LOW_LOAD 2
+#define SWITCH_PIN_HIGH_LOAD 1
+#define BOOT_SWITCH_PIN 0
+
+// spare GPIO pins
+#define GPIO3 3
+#define GPIO45 45
+#define GPIO46 46
+
+uint8_t LED_PINS[] = {
+    LED_GAUGE_H5,
+    LED_GAUGE_H4,
+    LED_GAUGE_H3,
+    LED_GAUGE_H2,
+    LED_GAUGE_H1,
+    LED_GAUGE_OK,
+    LED_GAUGE_L1,
+    LED_GAUGE_L2,
+    LED_GAUGE_L3,
+    LED_GAUGE_L4,
+    LED_GAUGE_L5,
+    LED_TEST_CABLE_OK,
+    LED_TEST_CABLE_FAIL,
+    LED_TEST_NO_LOAD_OK,
+    LED_TEST_NO_LOAD_FAIL,
+    LED_TEST_LOW_LOAD_OK,
+    LED_TEST_LOW_LOAD_FAIL,
+    LED_TEST_HIGH_LOAD_OK,
+    LED_TEST_HIGH_LOAD_FAIL
+};
+
+uint8_t GAUGE_LED_PINS[] = {
+    LED_GAUGE_H5,
+    LED_GAUGE_H4,
+    LED_GAUGE_H3,
+    LED_GAUGE_H2,
+    LED_GAUGE_H1,
+    LED_GAUGE_OK,
+    LED_GAUGE_L1,
+    LED_GAUGE_L2,
+    LED_GAUGE_L3,
+    LED_GAUGE_L4,
+    LED_GAUGE_L5
+};

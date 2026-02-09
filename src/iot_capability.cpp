@@ -24,6 +24,11 @@ void OnOffSwitch::begin() {
     _conn->subscribe_mqtt_topic(_mqtt_topic);
     log_info("OnOffSwitch \'%s\' created on topic %s", _name, _mqtt_topic);
     _conn->maintain();
+    // Register action
+    _conn->register_action(_mqtt_topic, [this](etl::string<16> action_string) { 
+        this->parse_action(action_string); 
+    });
+
     
 }
 
@@ -39,8 +44,7 @@ void OnOffSwitch::turnOn(bool updateOnOffTopic)
 {
     digitalWrite(_pin, HIGH);
     if (updateOnOffTopic) { _conn->publish(_mqtt_topic, _on_value); }
-    log_info("OnOffSwitch %s turned ON", _name);
-    _conn->maintain();
+    log_info("OnOffSwitch %s turned ON", _name.c_str() );
 }
 
 
@@ -48,8 +52,7 @@ void OnOffSwitch::turnOff(bool updateOnOffTopic)
 {
     digitalWrite(_pin, LOW);
     if (updateOnOffTopic) { _conn->publish(_mqtt_topic, _off_value); }
-    log_info("OnOffSwitch %s turned OFF", _name);
-    _conn->maintain();
+    log_info("OnOffSwitch %s turned OFF", _name.c_str());
 }
 
 void OnOffSwitch::toggle(bool updateOnOffTopic)
@@ -87,6 +90,19 @@ etl::string<8> OnOffSwitch::getOnValue()
 etl::string<8> OnOffSwitch::getOffValue()
 {
     return(_off_value);
+}
+
+void OnOffSwitch::parse_action(etl::string<16> action_string) {
+    // action_string is MQTT message received on action topic
+    if (action_string == _on_value) {
+        turnOn();
+    }
+    else if (action_string == _off_value) {
+        turnOff();
+    }
+    else {
+        log_error("Cannot parse action string: %s", action_string);
+    }
 }
 
 

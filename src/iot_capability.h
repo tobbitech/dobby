@@ -28,6 +28,7 @@ class OnOffSwitch
         void setSwitchState(etl::string<8> on_off_value, bool updateOnOfTopic = false);
         etl::string<8> getOnValue();
         etl::string<8> getOffValue();
+        void parse_action(etl::string<16> action_string);
 
 
     private:

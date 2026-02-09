@@ -11,6 +11,7 @@
 #include <etl/string.h>
 #include <etl/to_arithmetic.h>
 #include "command.h"
+#include <functional>
 
 // #define ARDUINO_IOT_USE_SSL
 #define HEARTBEAT_INTERVAL_MS 5000
@@ -59,7 +60,14 @@ class Connection
         bool new_mqtt_message;
         uint32_t number_mqtt_callbacks;
         void loop_mqtt();
-        void register_action(etl::string<64> topic, void (*func_ptr));
+        struct Action {
+            // size_t index;
+            etl::string<64> topic;
+            // etl::string<16> action_string;
+            std::function<void(etl::string<16>)> function;
+            // bool new_action;
+        };
+        void register_action(etl::string<64> topic, std::function<void(etl::string<16>)> func);
 
     private:
         void _mqtt_callback(char *callbackTopic, byte *payload, unsigned int payloadLength);
@@ -93,13 +101,7 @@ class Connection
         NTPClient _time_client(WiFiUDP);
         uint32_t _last_number_of_callbacks;
         uint32_t _last_heartbeat_millis;
-        struct action {
-            size_t index;
-            etl::string<64> topic;
-            etl::string<16> action_string;
-            bool new_action;
-        };
-        etl::vector<action, 20> action_list;
+        etl::vector<Action, 20> _action_list;
 };
 
 void WiFiStationWifiReady(WiFiEvent_t event, WiFiEventInfo_t info);

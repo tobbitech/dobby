@@ -5,13 +5,14 @@
 #include "mqttConnection.h"
 #include "wifi_cred.h"
 #include "iot_capability.h"
+#include "pinmapping.h"
 
 #define MAINTOPIC "test"
 
 CommandParser cmd;
 Connection conn;
 
-OnOffSwitch led1(&conn, 18, "LED 1", MAINTOPIC "/led1");
+OnOffSwitch led1(&conn, LED_GAUGE_OK, "LED 1", MAINTOPIC "/led1");
 
 void setup() {
   set_log_level(log_severity::DEBUG);
@@ -41,6 +42,8 @@ void setup() {
   );
 
   led1.begin();
+
+  
 }
 
 void loop() {
