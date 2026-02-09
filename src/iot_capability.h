@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include "logging.h"
 #include "mqttConnection.h"
+#include "timer.h"
 // #include <OneWire.h>
 // #include <DallasTemperature.h>
 // #include <HardwareSerial.h>
@@ -73,69 +74,69 @@ class OnOffSwitch
 //         bool _getting_data;
 // };
 
-// class InputMomentary {
-//     public:
-//         InputMomentary(
-//             Connection * conn, 
-//             int pin, 
-//             String name, 
-//             String mqtt_topic, 
-//             float analog_threshold_V = 0, // uses digitalRead when 0
-//             bool on_level = HIGH,
-//             u_int32_t debounce_delay = 50,
-//             String on_value = "true", 
-//             String off_value = "false");
-//         void begin();
-//         void tick();
-//         bool is_pressed();
-//         bool is_held();
-//         bool is_released();
-//         u_int32_t get_hold_time_ms();
-//         void set_sticky_button_timer(Timer sticky_timer);
-//         bool is_sticky_held();
-//         u_int32_t get_remaining_sticky_hold_time_ms();
-//         String get_set_topic();
-//         String get_name();
-//         void press();
+class InputMomentary {
+    public:
+        InputMomentary(
+            Connection * conn, 
+            int pin, 
+            etl::string<32> name, 
+            etl::string<64> mqtt_topic, 
+            float analog_threshold_V = 0, // uses digitalRead when 0
+            bool on_level = HIGH,
+            u_int32_t debounce_delay = 50,
+            etl::string<8> on_value = "true", 
+            etl::string<8> off_value = "false");
+        void begin();
+        void tick();
+        bool is_pressed();
+        bool is_held();
+        bool is_released();
+        u_int32_t get_hold_time_ms();
+        void set_sticky_button_timer(Timer sticky_timer);
+        bool is_sticky_held();
+        u_int32_t get_remaining_sticky_hold_time_ms();
+        etl::string<64> get_mqtt_topic();
+        etl::string<32> get_name();
+        void press();
 
-//         enum state {
-//             RESET,
-//             START,
-//             GO,
-//             WAIT,
-//             TRIGGERED,
-//             HELD,
-//             STICKY,
-//             RELEASED
-//         };
+        enum state {
+            RESET,
+            START,
+            GO,
+            WAIT,
+            TRIGGERED,
+            HELD,
+            STICKY,
+            RELEASED
+        };
 
-//     private:
-//         Connection * _conn;
-//         int _pin;
-//         String _name;
-//         String _mqtt_topic;
-//         String _mqtt_set_topic;
-//         int _pressed;
-//         int _unpressed;
-//         u_int32_t _debounce_delay;
-//         String _on_value;
-//         String _off_value;
-//         float _analog_threshold_V = 0;
+    private:
+        Connection * _conn;
+        int _pin;
+        etl::string<32> _name;
+        etl::string<64> _mqtt_topic;
+        etl::string<64> _mqtt_set_topic;
+        int _pressed;
+        int _unpressed;
+        u_int32_t _debounce_delay;
+        etl::string<8> _on_value;
+        etl::string<8> _off_value;
+        float _analog_threshold_V = 0;
         
-//         int _state;
-//         int _last_state;
-//         u_int32_t _last_debounce_time;
-//         u_int32_t _hold_time_ms;
-//         Timer _debounce_timer;
-//         Timer _sticky_timer;
+        int _state;
+        int _last_state;
+        u_int32_t _last_debounce_time;
+        u_int32_t _hold_time_ms;
+        Timer _debounce_timer;
+        Timer _sticky_timer;
 
-//         int switch_value;
-//         bool _is_pressed;
-//         bool _is_held;
-//         bool _is_released; 
-//         bool _is_sticky_held;
-//         bool _virtual_press = false;
-// };
+        int switch_value;
+        bool _is_pressed;
+        bool _is_held;
+        bool _is_released; 
+        bool _is_sticky_held;
+        bool _virtual_press = false;
+};
 
 // #define HAN_READ_TIMEOUT_MS 100
 // #define HAN_MAX_MESSAGE_SIZE 2000

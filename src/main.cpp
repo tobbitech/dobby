@@ -18,6 +18,8 @@ OnOffSwitch led3(&conn, LED_GAUGE_H2, "LED 3", MAINTOPIC "/led3");
 OnOffSwitch led4(&conn, LED_GAUGE_H3, "LED 4", MAINTOPIC "/led4");
 OnOffSwitch led5(&conn, LED_GAUGE_H4, "LED 5", MAINTOPIC "/led5");
 
+InputMomentary boot_sw(&conn, BOOT_SWITCH_PIN, "Boot", MAINTOPIC "/button1");
+
 void setup() {
   set_log_level(log_severity::DEBUG);
   pinMode(39, OUTPUT); // fix dim LED
@@ -57,4 +59,6 @@ void setup() {
 void loop() {
   cmd.tick();
   conn.maintain();
+
+  boot_sw.tick();
 }

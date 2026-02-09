@@ -234,159 +234,158 @@ void OnOffSwitch::parse_action(etl::string<16> action_string) {
 
 // }
 
-// InputMomentary::InputMomentary(
-//             Connection * conn, 
-//             int pin, 
-//             String name, 
-//             String mqtt_topic,
-//             float analog_threshold_V,
-//             bool on_level,
-//             u_int32_t debounce_delay,
-//             String on_value, 
-//             String off_value)
-// {
-//     _conn = conn;
-//     _pin = pin;
-//     _mqtt_topic = mqtt_topic;
-//     _mqtt_set_topic = mqtt_topic + "/set";
-//     _name = name;
-//     _analog_threshold_V = analog_threshold_V;
-//     _pressed = on_level;
-//     _unpressed = !on_level;
-//     _debounce_delay = debounce_delay;
-//     _on_value = on_value;
-//     _off_value = off_value;
+InputMomentary::InputMomentary(
+            Connection * conn, 
+            int pin, 
+            etl::string<32> name, 
+            etl::string<64> mqtt_topic,
+            float analog_threshold_V,
+            bool on_level,
+            u_int32_t debounce_delay,
+            etl::string<8> on_value, 
+            etl::string<8> off_value)
+{
+    _conn = conn;
+    _pin = pin;
+    _mqtt_topic = mqtt_topic;
+    // _mqtt_set_topic = mqtt_topic + "/set";
+    _name = name;
+    _analog_threshold_V = analog_threshold_V;
+    _pressed = on_level;
+    _unpressed = !on_level;
+    _debounce_delay = debounce_delay;
+    _on_value = on_value;
+    _off_value = off_value;
 
-//     _state = InputMomentary::RESET;
-//     _last_state = InputMomentary::RESET;
-//     _last_debounce_time = 0;
-//     _is_pressed = false;
-//     _is_released = false;
-//     _sticky_timer.set(0, "seconds");
-//     _is_sticky_held = false;
+    _state = InputMomentary::RESET;
+    _last_state = InputMomentary::RESET;
+    _last_debounce_time = 0;
+    _is_pressed = false;
+    _is_released = false;
+    _sticky_timer.set(0, 's');
+    _is_sticky_held = false;
 
-// }
+}
 
-// void InputMomentary::begin() {
-//     _conn->subscribeMqttTopic(_mqtt_set_topic);
-//     _conn->debug("Push button " + _name + " created on topic " + _mqtt_topic);
-//     _conn->maintain();
-// }
+void InputMomentary::begin() {
+    // _conn->subscribe_mqtt_topic(_mqtt_set_topic);
+    _conn->subscribe_mqtt_topic(_mqtt_topic);
+    log_debug("Push button %s created on topic %s", _name.c_str(), _mqtt_topic.c_str());
+}
 
-// String InputMomentary::get_name() {
-//     return(_name);
-// }
+etl::string<32> InputMomentary::get_name() {
+    return(_name);
+}
 
-// void InputMomentary::set_sticky_button_timer(Timer sticky_timer) {
-//     _sticky_timer = sticky_timer;
-// }
+etl::string<64> InputMomentary::get_mqtt_topic() {
+    return(_mqtt_topic);
+}
 
-// uint32_t InputMomentary::get_remaining_sticky_hold_time_ms() {
-//     return(_sticky_timer.remaining() );
-// }
+void InputMomentary::set_sticky_button_timer(Timer sticky_timer) {
+    _sticky_timer = sticky_timer;
+}
 
+uint32_t InputMomentary::get_remaining_sticky_hold_time_ms() {
+    return(_sticky_timer.remaining() );
+}
 
-// bool InputMomentary::is_pressed() {
-//     return _is_pressed;
-// }
+bool InputMomentary::is_pressed() {
+    return _is_pressed;
+}
 
-// bool InputMomentary::is_released() {
-//     return _is_released;
-// }
+bool InputMomentary::is_released() {
+    return _is_released;
+}
 
-// bool InputMomentary::is_held() {
-//     return _is_held;
-// }
+bool InputMomentary::is_held() {
+    return _is_held;
+}
 
-// bool InputMomentary::is_sticky_held() {
-//     return (_is_sticky_held);
-// }
+bool InputMomentary::is_sticky_held() {
+    return (_is_sticky_held);
+}
 
-// u_int32_t InputMomentary::get_hold_time_ms() {
-//     return millis() -_hold_time_ms;
-// }
+u_int32_t InputMomentary::get_hold_time_ms() {
+    return millis() -_hold_time_ms;
+}
 
-// String InputMomentary::get_set_topic() {
-//     return(_mqtt_set_topic);
-// }
+void InputMomentary::press() {
+    _virtual_press = true;
+}
 
-// void InputMomentary::press() {
-//     _virtual_press = true;
-// }
+void InputMomentary::tick() {
+    switch_value = _unpressed;
+    if (_virtual_press == true) {
+        switch_value = _pressed;
+    }
+    else if (_analog_threshold_V == 0 ) {
+        switch_value = digitalRead(_pin);
+    }
+    else {
+        uint16_t value = analogRead(_pin);
+        uint16_t threshold = round(4096 / 3.3) * _analog_threshold_V;
+        if (value > threshold) {
+            switch_value = _pressed;
+        }
+    }
+    _last_state = _state;
 
-// void InputMomentary::tick() {
-//     switch_value = _unpressed;
-//     if (_virtual_press == true) {
-//         switch_value = _pressed;
-//     }
-//     else if (_analog_threshold_V == 0 ) {
-//         switch_value = digitalRead(_pin);
-//     }
-//     else {
-//         uint16_t value = analogRead(_pin);
-//         uint16_t threshold = round(4096 / 3.3) * _analog_threshold_V;
-//         if (value > threshold) {
-//             switch_value = _pressed;
-//         }
-//     }
-//     _last_state = _state;
+    switch(_state) {
+        case InputMomentary::RESET:
+            _is_pressed = false;
+            _is_held = false;
+            _is_released = false;
+            _hold_time_ms = millis();
+            _state = InputMomentary::START;
+            break;
+        case InputMomentary::START:
+            if (switch_value == _pressed) {
+                _state = InputMomentary::GO;
+            } 
+            break;
+        case InputMomentary::GO:
+            _debounce_timer.set(_debounce_delay, 'm');
+            _state = InputMomentary::WAIT;
+            break;
+        case InputMomentary::WAIT:
+            if (switch_value == _unpressed) {
+                _state = InputMomentary::RESET;
+            } else if (_debounce_timer.is_done()) {
+                _state = InputMomentary::TRIGGERED;
+            }
+            break;
+        case InputMomentary::TRIGGERED:
+            _virtual_press = false;
+            _is_pressed = true;
+            _hold_time_ms = millis();
+            // Serial.println("Button pressed");
+            _sticky_timer.reset();
+            _conn->publish(_mqtt_topic, _on_value);
+            _state = InputMomentary::HELD;
+            break;
 
-//     switch(_state) {
-//         case InputMomentary::RESET:
-//             _is_pressed = false;
-//             _is_held = false;
-//             _is_released = false;
-//             _hold_time_ms = millis();
-//             _state = InputMomentary::START;
-//             break;
-//         case InputMomentary::START:
-//             if (switch_value == _pressed) {
-//                 _state = InputMomentary::GO;
-//             } 
-//             break;
-//         case InputMomentary::GO:
-//             _debounce_timer.set(_debounce_delay, "milliseconds");
-//             _state = InputMomentary::WAIT;
-//             break;
-//         case InputMomentary::WAIT:
-//             if (switch_value == _unpressed) {
-//                 _state = InputMomentary::RESET;
-//             } else if (_debounce_timer.is_done()) {
-//                 _state = InputMomentary::TRIGGERED;
-//             }
-//             break;
-//         case InputMomentary::TRIGGERED:
-//             _virtual_press = false;
-//             _is_pressed = true;
-//             _hold_time_ms = millis();
-//             // Serial.println("Button pressed");
-//             _sticky_timer.reset();
-//             _conn->publish(_mqtt_topic, _on_value);
-//             _state = InputMomentary::HELD;
-//             break;
-
-//         case InputMomentary::HELD:
-//             _is_pressed = false;
-//             _is_held = true;
-//             _is_sticky_held = true;
-//             if (switch_value == _unpressed ) {
-//                 _state = InputMomentary::STICKY;
-//             }
-//             break;
-//         case InputMomentary::STICKY:
-//             _is_held = false;
-//             if (_sticky_timer.is_done() ) {
-//                 _state = InputMomentary::RELEASED;
-//             }
-//             break;
-//         case InputMomentary::RELEASED:
-//             _is_sticky_held = false;
-//             _is_released = true;
-//             _conn->publish(_mqtt_topic, _off_value);
-//             _state = InputMomentary::RESET;
-//             break;
-//     }
-// }
+        case InputMomentary::HELD:
+            _is_pressed = false;
+            _is_held = true;
+            _is_sticky_held = true;
+            if (switch_value == _unpressed ) {
+                _state = InputMomentary::STICKY;
+            }
+            break;
+        case InputMomentary::STICKY:
+            _is_held = false;
+            if (_sticky_timer.is_done() ) {
+                _state = InputMomentary::RELEASED;
+            }
+            break;
+        case InputMomentary::RELEASED:
+            _is_sticky_held = false;
+            _is_released = true;
+            _conn->publish(_mqtt_topic, _off_value);
+            _state = InputMomentary::RESET;
+            break;
+    }
+}
 
 
 
