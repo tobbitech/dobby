@@ -13,6 +13,10 @@ CommandParser cmd;
 Connection conn;
 
 OnOffSwitch led1(&conn, LED_GAUGE_OK, "LED 1", MAINTOPIC "/led1");
+OnOffSwitch led2(&conn, LED_GAUGE_H1, "LED 2", MAINTOPIC "/led2");
+OnOffSwitch led3(&conn, LED_GAUGE_H2, "LED 3", MAINTOPIC "/led3");
+OnOffSwitch led4(&conn, LED_GAUGE_H3, "LED 4", MAINTOPIC "/led4");
+OnOffSwitch led5(&conn, LED_GAUGE_H4, "LED 5", MAINTOPIC "/led5");
 
 void setup() {
   set_log_level(log_severity::DEBUG);
@@ -42,6 +46,10 @@ void setup() {
   );
 
   led1.begin();
+  led2.begin();
+  led3.begin();
+  led4.begin();
+  led5.begin();
 
   
 }
