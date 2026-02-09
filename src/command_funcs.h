@@ -23,30 +23,37 @@ namespace CMD {
     void enable_ota(CommandArgs args) {
         log_response("Enabling OTA");
 
+        // Stores OTA progress to avoid spamming logs with same percentage
+        unsigned int last_progress = 0 ;
+        
         ArduinoOTA
             .onStart([]() {
-            etl::string<16> type;
-            if (ArduinoOTA.getCommand() == U_FLASH)
-                type = "sketch";
-            else // U_SPIFFS
-                type = "filesystem";
+                etl::string<16> type;
+                if (ArduinoOTA.getCommand() == U_FLASH)
+                    type = "sketch";
+                else // U_SPIFFS
+                    type = "filesystem";
 
-            // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-            log_response("Start updating %s", type);
+                // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+                log_response("Start updating %s", type);
             })
             .onEnd([]() {
-            log_response("Data transmission completed");
+                log_response("Data transmission completed");
             })
-            .onProgress([](unsigned int progress, unsigned int total) {
-            log_response("Progress: %u%%\r", (progress / (total / 100)));
+            .onProgress([&last_progress](unsigned int progress, unsigned int total) {
+                unsigned int progress_pct = (progress / (total / 100));
+                if (progress_pct != last_progress ) {
+                    log_response("Progress: %u%%\r", progress_pct);
+                    last_progress = progress_pct;
+                }
             })
             .onError([](ota_error_t error) {
-            log_error("Error[%u]: ", error);
-            if (error == OTA_AUTH_ERROR) log_error("Auth Failed");
-            else if (error == OTA_BEGIN_ERROR) log_error("Begin Failed");
-            else if (error == OTA_CONNECT_ERROR) log_error("Connect Failed");
-            else if (error == OTA_RECEIVE_ERROR) log_error("Receive Failed");
-            else if (error == OTA_END_ERROR) log_error("End Failed");
+                log_error("OTA Error[%u]: ", error);
+                if (error == OTA_AUTH_ERROR) log_error("Auth Failed");
+                else if (error == OTA_BEGIN_ERROR) log_error("Begin Failed");
+                else if (error == OTA_CONNECT_ERROR) log_error("Connect Failed");
+                else if (error == OTA_RECEIVE_ERROR) log_error("Receive Failed");
+                else if (error == OTA_END_ERROR) log_error("End Failed");
             });
 
         ArduinoOTA.begin();
