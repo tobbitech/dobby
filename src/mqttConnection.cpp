@@ -283,7 +283,7 @@ void Connection::maintain()
         // Run command corresponding to the action topic
         for (size_t i = 0; i < _action_list.size(); i++) {
             if (received_mqtt_topic == _action_list[i].topic) {
-                log_info("Running action for topic %s", received_mqtt_topic.c_str());
+                log_debug("Running action for topic %s", received_mqtt_topic.c_str());
                 _action_list[i].function(received_mqtt_message);
             }
         }
