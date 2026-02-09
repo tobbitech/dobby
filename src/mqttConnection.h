@@ -93,6 +93,13 @@ class Connection
         NTPClient _time_client(WiFiUDP);
         uint32_t _last_number_of_callbacks;
         uint32_t _last_heartbeat_millis;
+        struct action {
+            size_t index;
+            etl::string<64> topic;
+            etl::string<16> action_string;
+            bool new_action;
+        };
+        etl::vector<action, 20> action_list;
 };
 
 void WiFiStationWifiReady(WiFiEvent_t event, WiFiEventInfo_t info);
