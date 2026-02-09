@@ -279,6 +279,12 @@ void Connection::maintain()
             cmd.parse(received_mqtt_message);
         }
 
+        // Handle actions
+        // Run command corresponding to the action topic
+
+
+
+
         // clear variables and get ready for next message
         _last_number_of_callbacks = number_mqtt_callbacks;
         received_mqtt_message.clear();

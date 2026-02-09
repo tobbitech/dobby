@@ -59,6 +59,7 @@ class Connection
         bool new_mqtt_message;
         uint32_t number_mqtt_callbacks;
         void loop_mqtt();
+        void register_action(etl::string<64> topic, void (*func_ptr));
 
     private:
         void _mqtt_callback(char *callbackTopic, byte *payload, unsigned int payloadLength);

@@ -4,18 +4,19 @@
 #include "command_funcs.h"
 #include "mqttConnection.h"
 #include "wifi_cred.h"
+#include "iot_capability.h"
+
+#define MAINTOPIC "test"
 
 CommandParser cmd;
 Connection conn;
 
+OnOffSwitch led1(&conn, 18, "LED 1", MAINTOPIC "/led1");
+
 void setup() {
-
   set_log_level(log_severity::DEBUG);
-
   pinMode(39, OUTPUT); // fix dim LED
-
   Serial.begin(112500);
-  Serial.println("Hi there!");
 
   cmd.add(1, CMD::list_commands, "Lists available commands");
   cmd.add(2, CMD::reboot, "Reboot device");
@@ -28,7 +29,7 @@ void setup() {
   conn.connect( WIFI_SSID,
     WIFI_PW,
     "192.168.2.7",
-    "test",
+    MAINTOPIC,
     "",
     "",
     "",
@@ -38,10 +39,11 @@ void setup() {
     47,
     false
   );
+
+  led1.begin();
 }
 
 void loop() {
   cmd.tick();
   conn.maintain();
-  
 }
