@@ -142,7 +142,7 @@ class InputMomentary {
 };
 
 #define HAN_READ_TIMEOUT_MS 100
-#define HAN_MAX_MESSAGE_SIZE 2000
+#define HAN_MAX_MESSAGE_SIZE 512
 
 class HANreader {
     public:
@@ -151,7 +151,7 @@ class HANreader {
         void end();
         void tick();
         HardwareSerial serialHAN;
-        void parse_message(String message);
+        // void parse_message(String message);
         void parse_message();
 
         struct han_line {
@@ -193,14 +193,16 @@ class HANreader {
     private:
         Connection * _conn;
         etl::string<MQTT_TOPIC_STRING_LENGTH> _mqttTopic;
+        etl::string<MQTT_TOPIC_STRING_LENGTH> _han_hex_topic;
         uint8_t _RXpin;
         uint8_t _TXpin;
         int16_t _state;
         int16_t _prev_state;
         char _recv_char;
-        etl::string<MQTT_PAYLOAD_STRING_LENGTH> _message;
+        // etl::string<HAN_MAX_MESSAGE_SIZE> _message;
         uint8_t _message_buf[HAN_MAX_MESSAGE_SIZE];
         uint16_t _message_buf_pos;
+        etl::string<HAN_MAX_MESSAGE_SIZE*2> _hex_message;
         void _receive_char();
         uint32_t _last_byte_millis;
         bool _match_sequence(uint16_t);

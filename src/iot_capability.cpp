@@ -229,7 +229,7 @@ void DS18B20_temperature_sensors::_get_sensor_data_nonblocking() {
     etl::string<16> temperature_string;
     temperature_string.assign(etl::to_string(_sensors.getTempC(_deviceAddresses[i]), temperature_string, etl::format_spec().precision(2)));
     _conn->publish(deviceMqttTopic, temperature_string);
-    log_info("%s: %fC", _deviceNames[i].c_str(), _sensors.getTempC(_deviceAddresses[i]));
+    log_info("%s: %.2fC", _deviceNames[i].c_str(), _sensors.getTempC(_deviceAddresses[i]));
 
     if (_currentDevice >= _numberOfDevices ) {
         _getting_data = false;
@@ -405,12 +405,14 @@ HANreader::HANreader(Connection * conn, etl::string<MQTT_TOPIC_STRING_LENGTH> mq
     _TXpin = TXpin;
     _conn = conn;
     _mqttTopic = mqttTopic;
+    _han_hex_topic = mqttTopic;
+    _han_hex_topic += "/hex";
 }
 
 void HANreader::begin() {
     serialHAN.begin(2400, SERIAL_8N1, _RXpin, _TXpin);
     _last_byte_millis = 0;
-    _message = "";
+    // _message = "";
     _message_buf_pos = 0;
 }
 
@@ -421,11 +423,11 @@ void HANreader::end() {
 void HANreader::tick() {
     uint32_t time_since_last_byte = millis() - _last_byte_millis;
 
-    if ( time_since_last_byte > HAN_READ_TIMEOUT_MS && _message != "" ) {
+    if ( time_since_last_byte > HAN_READ_TIMEOUT_MS && _message_buf_pos > 0 ) {
         // parse_message( _message );
         _message_buf[_message_buf_pos] = '\0';
         parse_message();
-        _message = "";
+        // _message = "";
         _message_buf_pos = 0;
     }
 
@@ -433,7 +435,7 @@ void HANreader::tick() {
         char recv_char = serialHAN.read();
         _last_byte_millis = millis(); // reset timeout counter
         // if (recv_char != NULL) {
-        _message += recv_char;
+        // _message += recv_char;
         _message_buf[_message_buf_pos++] = recv_char;
             
 
@@ -462,33 +464,22 @@ u_int16_t crc16x25(unsigned char *data_p, u_int16_t lenght) {
 }
 
 void HANreader::parse_message() {
-
-    //  etl::string<HAN_MAX_MESSAGE_SIZE> hex_string = _mqtt_main_topic;
-    // deviceMqttTopic += "/" ;
-    // deviceMqttTopic += _deviceNames[i];
-    // etl::string<16> temperature_string;
-
-
-    // translate char string to hex
-    // String hex = "";
-
-
-    // for (int i = 0; i < _message_buf_pos; i++ ) {
-    //         char buf[5];
-    //         sprintf(buf, "%02x", _message_buf[i] );
-    //         hex += String(buf);  
-    // }
-    // // publish raw HAN message
-    // _conn->publish(_mqttTopic + "/hex", hex + " len: " + String(_message_buf_pos));
-    // _conn->publish(_mqttTopic + "/raw", _message_buf);
-
+    for (int i = 0; i < _message_buf_pos; i++ ) {
+            etl::string<2> hex_byte;
+            etl::to_string(_message_buf[i], hex_byte, etl::format_spec().base(16).fill('0').width(2));
+            _hex_message += hex_byte;
+    }
+    // publish raw HAN message
     
+    _conn->publish(_han_hex_topic, _hex_message);
+    log_debug("Published HAN hex message (length %d) to topic %s", _hex_message.size(),_han_hex_topic.c_str());
+    _hex_message.clear();
     
-
     // parse HAN message
-    int i = 0;
+    size_t i = 0;
     if (_message_buf[i++] == 0x7e ) { 
         // flag found
+        log_debug("HAN message flag found (0x7e)");
         u_int8_t header[6] = {
             _message_buf[i++],
             _message_buf[i++],
@@ -506,8 +497,10 @@ void HANreader::parse_message() {
             return;
         }
         
+        return;
+
         // jump past next 9 bytes, we dont need them for anything
-        i = i + 9; 
+        i += 9; 
 
         int datatype = _message_buf[i++];
         int payload_lines = _message_buf[i++];
@@ -516,7 +509,10 @@ void HANreader::parse_message() {
         // String unit = "";
         // String subtopic = "";
         // String value_str = "";
+        _subtopic.clear();
         _value_string.clear();
+
+        size_t current_line_index;
 
         for (int line = 0; line < payload_lines; line++) {
             i += 4; // jump past type identifier in line
@@ -528,10 +524,9 @@ void HANreader::parse_message() {
                 _message_buf[i++],
                 _message_buf[i++]
             };
+        
 
-            // printf("OBIS code: %02x %02x %02x %02x %02x %02x\t", obis_code[0], obis_code[1], obis_code[2], obis_code[3], obis_code[4], obis_code[5] );
-
-            size_t current_line_index;
+            log_debug("OBIS code: %02x %02x %02x %02x %02x %02x\t", obis_code[0], obis_code[1], obis_code[2], obis_code[3], obis_code[4], obis_code[5] );
 
             for (size_t l = 0; l < _no_han_lines; l++) {
                 if (std::equal(obis_code, obis_code + sizeof obis_code / sizeof *obis_code, han_lines[l].obis_code) ) {
@@ -539,12 +534,12 @@ void HANreader::parse_message() {
                     // name = han_lines[l].name;
                     // unit = han_lines[l].unit;
                     // subtopic = han_lines[l].subtopic;
-                    // _conn->debug("OBIS code found: " + name + ", subtopic: " + subtopic );
+                    log_debug("OBIS code found: %s subtopic: %s", han_lines[l].name.c_str(), han_lines[l].subtopic.c_str());
                     break;
                 } else {
-                    // _conn->debug("No OBIS code found");
+                    log_debug("No OBIS code found");
                 }
-             }
+            }
 
             u_int8_t variable_type = _message_buf[i++];
 
