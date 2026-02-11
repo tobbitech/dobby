@@ -4,8 +4,8 @@
 #include "logging.h"
 #include "mqttConnection.h"
 #include "timer.h"
-// #include <OneWire.h>
-// #include <DallasTemperature.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 // #include <HardwareSerial.h>
 
 class OnOffSwitch
@@ -42,37 +42,37 @@ class OnOffSwitch
         etl::string<8> _off_value;
 };
 
-// class DS18B20_temperature_sensors
-// {
-//     public:
-//         DS18B20_temperature_sensors(Connection * conn, int pin, String mqtt_main_topic);
-//         String getMqttTopic();
-//         String getName(int deviceIndex);
-//         String convertAddressToString(DeviceAddress address);
-//         String getAddressString(int deviceIndex);
-//         uint8_t scanForSensors();
-//         float getTemperature(uint8_t deviceIndex);
-//         float getTemperatureByName(String deviceName);
-//         void mapNameToDeviceAddress(DeviceAddress address, String name);
-//         void publishAllTemperatures();
-//         void tick();
+class DS18B20_temperature_sensors
+{
+    public:
+        DS18B20_temperature_sensors(Connection * conn, int pin, etl::string<64> mqtt_main_topic);
+        etl::string<64> getMqttTopic();
+        etl::string<24> getName(int deviceIndex);
+        etl::string<24> convertAddressToString(DeviceAddress address);
+        etl::string<24> getAddressString(int deviceIndex);
+        uint8_t scanForSensors();
+        float getTemperature(uint8_t deviceIndex);
+        float getTemperatureByName(etl::string<24> deviceName);
+        void mapNameToDeviceAddress(DeviceAddress address, etl::string<24> name);
+        void publishAllTemperatures();
+        void tick();
 
-//     private:
-//         Connection * _conn;
-//         OneWire _oneWire;
-//         DallasTemperature _sensors;
-//         DeviceAddress _deviceAddresses[127];
-//         String _deviceNames[127];
-//         uint8_t _numberOfDevices;
-//         uint8_t _currentDevice;
-//         String _name;
-//         String _mqtt_main_topic;
-//         String _addressMap[127];
-//         String _nameMap[127];
-//         size_t _mapSize;
-//         void _get_sensor_data_nonblocking();
-//         bool _getting_data;
-// };
+    private:
+        Connection * _conn;
+        OneWire _oneWire;
+        DallasTemperature _sensors;
+        DeviceAddress _deviceAddresses[127];
+        etl::string<32> _deviceNames[127];
+        uint8_t _numberOfDevices;
+        uint8_t _currentDevice;
+        etl::string<32> _name;
+        etl::string<64> _mqtt_main_topic;
+        etl::string<24> _addressMap[127];
+        etl::string<24> _nameMap[127];
+        size_t _mapSize;
+        void _get_sensor_data_nonblocking();
+        bool _getting_data;
+};
 
 class InputMomentary {
     public:

@@ -107,132 +107,141 @@ void OnOffSwitch::parse_action(etl::string<16> action_string) {
 
 
 
-// DS18B20_temperature_sensors::DS18B20_temperature_sensors(Connection * conn, int pin, String mqtt_main_topic): _oneWire(pin), _sensors(&_oneWire) 
-// // dunno why this works, but initating DallasTemperature objects in contructor does not work
-// {
-//     _conn = conn;
-//     _mqtt_main_topic = mqtt_main_topic;
-//     _numberOfDevices = 0;
-//     _mapSize = 0;
-//     _getting_data = false;
-// }
+DS18B20_temperature_sensors::DS18B20_temperature_sensors(Connection * conn, int pin, etl::string<64> mqtt_main_topic): _oneWire(pin), _sensors(&_oneWire) 
+// dunno why this works, but initating DallasTemperature objects in contructor does not work
+{
+    _conn = conn;
+    _mqtt_main_topic = mqtt_main_topic;
+    _numberOfDevices = 0;
+    _mapSize = 0;
+    _getting_data = false;
+}
 
-// uint8_t DS18B20_temperature_sensors::scanForSensors()
-// {
-//     // returns the number of sensors found on the bus
-//     _conn->debug("Scanning for DS18B20 sensors");
-//     _sensors.begin();
-//     _numberOfDevices = _sensors.getDeviceCount();
-//     _conn->debug("Found " + String(_numberOfDevices) + " DS18B20 sensors");
+uint8_t DS18B20_temperature_sensors::scanForSensors()
+{
+    // returns the number of sensors found on the bus
+    log_info("Scanning for DS18B20 sensors");
+    _sensors.begin();
+    _numberOfDevices = _sensors.getDeviceCount();
+    log_info("Found %d DS18B20 sensors", _numberOfDevices);
 
-//     // reset address and name arrays
-//     for (int i = 0; i < _numberOfDevices; i++) {
-//         _deviceNames[i] = "";
-//         for (byte j = 0; j < 8; j++) {
-//             _deviceAddresses[i][j] = 0;
-//         }
-//     }
+    // reset address and name arrays
+    for (int i = 0; i < _numberOfDevices; i++) {
+        _deviceNames[i] = "";
+        for (byte j = 0; j < 8; j++) {
+            _deviceAddresses[i][j] = 0;
+        }
+    }
 
-//     // store address for all devices in _deviceAddresses
-//     for (int i = 0; i < _numberOfDevices; i++) {
-//         _sensors.getAddress(_deviceAddresses[i], i);
-//         if ( _deviceNames[i].length() == 0) {
-//             _deviceNames[i] = DS18B20_temperature_sensors::getAddressString(i);
-//             _conn->debug("Devicename: " + _deviceNames[i]);
-//             for( int j = 0; j < _mapSize; j++) {
-//                 if ( _deviceNames[i] == _addressMap[j]) {
-//                     _deviceNames[i] = _nameMap[j];
-//                     _conn->debug("Mapped name " + _nameMap[j] + " to device address " + getAddressString(i));
-//                 }
-//             }
-//         }
-//     }
-
-
-//     // _sensors.requestTemperatures();
-//     return(_numberOfDevices);
-// }
-
-// String DS18B20_temperature_sensors::convertAddressToString(DeviceAddress address)
-// {
-//     // Converts address of type DeviceAddress to String
-//     String deviceName = "";
-//     for (byte i = 0; i < 8; i++) {
-//         address[i];
-//         deviceName += String(address[i], HEX);
-//         if (i < 7) {
-//             deviceName += ":";
-//         }
-//     }
-//     return(deviceName);
-// }
-
-// String DS18B20_temperature_sensors::getAddressString(int deviceIndex){
-//     // Converts address of type DeviceAddress to String
-//     return(DS18B20_temperature_sensors::convertAddressToString(_deviceAddresses[deviceIndex]));
-// }
-
-// void DS18B20_temperature_sensors::mapNameToDeviceAddress(DeviceAddress address, String name)
-// {
-//     _addressMap[_mapSize] = convertAddressToString(address);
-//     _nameMap[_mapSize] = name;
-//     _mapSize++;
-// }
-
-// String DS18B20_temperature_sensors::getMqttTopic() {
-//     return(_mqtt_main_topic);
-// }
-
-// String DS18B20_temperature_sensors::getName(int deviceIndex) {
-//     return(_deviceNames[deviceIndex]);
-// }
-
-// void DS18B20_temperature_sensors::publishAllTemperatures()
-// {
-//    _getting_data = true;
-//    _currentDevice = 0;
-//    uint32_t request_start_time = millis();
-//    _sensors.requestTemperatures();
-//    uint32_t request_time_ms = millis() - request_start_time;
-//    _conn->debug("Requested all sensors in " + String(request_time_ms) + "ms");
-// }   
+    // store address for all devices in _deviceAddresses
+    for (int i = 0; i < _numberOfDevices; i++) {
+        _sensors.getAddress(_deviceAddresses[i], i);
+        if ( _deviceNames[i].length() == 0) {
+            _deviceNames[i] = DS18B20_temperature_sensors::getAddressString(i);
+            log_info("Devicename: %s", _deviceNames[i].c_str());
+            for( int j = 0; j < _mapSize; j++) {
+                if ( _deviceNames[i] == _addressMap[j]) {
+                    _deviceNames[i] = _nameMap[j];
+                    log_info("Mapped name %s to device address %s", _nameMap[j].c_str(), getAddressString(i).c_str());
+                }
+            }
+        }
+    }
 
 
-// float DS18B20_temperature_sensors::getTemperature(uint8_t deviceIndex) {
-//     if (deviceIndex >= _numberOfDevices) {
-//         return(-200); // index out of range
-//     }
-//     _sensors.requestTemperatures();
-//     return(_sensors.getTempC(_deviceAddresses[deviceIndex]));
-// }
+    // _sensors.requestTemperatures();
+    return(_numberOfDevices);
+}
 
-// float DS18B20_temperature_sensors::getTemperatureByName(String deviceName) {
-//     for (uint8_t i = 0; i < _numberOfDevices; i++ ) {
-//         if (_deviceNames[i] == deviceName ) {
-//             return(getTemperature(i));
-//         }
-//     }
-//     return(-201); // deviceName not found
-// }
+etl::string<24> DS18B20_temperature_sensors::convertAddressToString(DeviceAddress address)
+{
+    // Converts address of type DeviceAddress to String
 
-// void DS18B20_temperature_sensors::_get_sensor_data_nonblocking() {
-//     int i = _currentDevice++;
+    etl::string<24> deviceName;
+    etl::string<3> byteString;
+    for (byte i = 0; i < 8; i++) {
+        byteString.clear();
+        byteString.assign(etl::to_string(address[i], byteString, etl::format_spec().base(16).fill('0').width(2)));
+        deviceName += byteString;
+        // address[i];
+        // deviceName[i] += String(address[i], HEX);
+        if (i < 7) {
+            deviceName += ":";
+        }
+    }
+    return(deviceName);
+}
 
-//     String deviceMqttTopic = _mqtt_main_topic + "/" + _deviceNames[i];
-//     _conn->publish(deviceMqttTopic, String(_sensors.getTempC(_deviceAddresses[i])));
-//     _conn->debug(_deviceNames[i] + ": " + _sensors.getTempC(_deviceAddresses[i]) + "C");
+etl::string<24> DS18B20_temperature_sensors::getAddressString(int deviceIndex){
+    // Converts address of type DeviceAddress to String
+    return(DS18B20_temperature_sensors::convertAddressToString(_deviceAddresses[deviceIndex]));
+}
 
-//     if (_currentDevice >= _numberOfDevices ) {
-//         _getting_data = false;
-//     }
-// }
+void DS18B20_temperature_sensors::mapNameToDeviceAddress(DeviceAddress address, etl::string<24> name)
+{
+    _addressMap[_mapSize] = convertAddressToString(address);
+    _nameMap[_mapSize] = name;
+    _mapSize++;
+}
 
-// void DS18B20_temperature_sensors::tick() {
-//     if (_getting_data == true) {
-//         _get_sensor_data_nonblocking();
-//     }
+etl::string<64> DS18B20_temperature_sensors::getMqttTopic() {
+    return(_mqtt_main_topic);
+}
 
-// }
+etl::string<24> DS18B20_temperature_sensors::getName(int deviceIndex) {
+    return(_deviceNames[deviceIndex]);
+}
+
+void DS18B20_temperature_sensors::publishAllTemperatures()
+{
+   _getting_data = true;
+   _currentDevice = 0;
+   uint32_t request_start_time = millis();
+   _sensors.requestTemperatures();
+   uint32_t request_time_ms = millis() - request_start_time;
+   log_info("Requested all sensors in %dms", request_time_ms);
+}   
+
+
+float DS18B20_temperature_sensors::getTemperature(uint8_t deviceIndex) {
+    if (deviceIndex >= _numberOfDevices) {
+        return(-200); // index out of range
+    }
+    _sensors.requestTemperatures();
+    return(_sensors.getTempC(_deviceAddresses[deviceIndex]));
+}
+
+float DS18B20_temperature_sensors::getTemperatureByName(etl::string<24> deviceName) {
+    for (uint8_t i = 0; i < _numberOfDevices; i++ ) {
+        if (_deviceNames[i] == deviceName ) {
+            return(getTemperature(i));
+        }
+    }
+    return(-201); // deviceName not found
+}
+
+void DS18B20_temperature_sensors::_get_sensor_data_nonblocking() {
+    int i = _currentDevice++;
+
+    etl::string<88> deviceMqttTopic = _mqtt_main_topic;
+    deviceMqttTopic += "/" ;
+    deviceMqttTopic += _deviceNames[i];
+    etl::string<16> temperature_string;
+    temperature_string.assign(etl::to_string(_sensors.getTempC(_deviceAddresses[i]), temperature_string, etl::format_spec().precision(2)));
+    _conn->publish(deviceMqttTopic, temperature_string);
+    log_info("%s: %fC", _deviceNames[i].c_str(), _sensors.getTempC(_deviceAddresses[i]));
+
+    if (_currentDevice >= _numberOfDevices ) {
+        _getting_data = false;
+    }
+}
+
+void DS18B20_temperature_sensors::tick() {
+    if (_getting_data == true) {
+        _get_sensor_data_nonblocking();
+    }
+
+}
 
 InputMomentary::InputMomentary(
             Connection * conn, 
