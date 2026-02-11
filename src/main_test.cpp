@@ -5,7 +5,7 @@
 #include "mqttConnection.h"
 #include "wifi_cred.h"
 #include "iot_capability.h"
-#include "pinmapping.h"
+#include "boards/dino.h"
 
 #define MAINTOPIC "test"
 
@@ -21,7 +21,7 @@ OnOffSwitch led5(&conn, LED_GAUGE_H4, "LED 5", MAINTOPIC "/led5");
 InputMomentary boot_sw(&conn, BOOT_SWITCH_PIN, "Boot", MAINTOPIC "/button1");
 
 void setup() {
-  set_log_level(log_severity::DEBUG);
+  set_log_level(log_severity::INFO);
   pinMode(39, OUTPUT); // fix dim LED
   Serial.begin(112500);
 
