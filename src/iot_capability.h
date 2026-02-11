@@ -6,7 +6,10 @@
 #include "timer.h"
 #include <OneWire.h>
 #include <DallasTemperature.h>
-// #include <HardwareSerial.h>
+#include <HardwareSerial.h>
+
+#define MQTT_TOPIC_STRING_LENGTH 64
+#define MQTT_PAYLOAD_STRING_LENGTH 256
 
 class OnOffSwitch
 {
@@ -15,13 +18,13 @@ class OnOffSwitch
             Connection * conn, 
             int pin, 
             etl::string<32> name, 
-            etl::string<64> mqtt_topic, 
+            etl::string<MQTT_TOPIC_STRING_LENGTH> mqtt_topic, 
             etl::string<8> on_value = "true",
             etl::string<8> off_value = "false"
         );
 
         void begin();
-        etl::string<64> getMqttTopic();
+        etl::string<MQTT_TOPIC_STRING_LENGTH> getMqttTopic();
         etl::string<32> getName();
         void turnOn(bool updateOnOfTopic = false);
         void turnOff(bool updateOnOfTopic = false);
@@ -36,7 +39,7 @@ class OnOffSwitch
         Connection * _conn;
         int _pin;
         etl::string<32> _name;
-        etl::string<64> _mqtt_topic;
+        etl::string<MQTT_TOPIC_STRING_LENGTH> _mqtt_topic;
         etl::string<20> _mac_address;
         etl::string<8> _on_value;
         etl::string<8> _off_value;
@@ -45,8 +48,8 @@ class OnOffSwitch
 class DS18B20_temperature_sensors
 {
     public:
-        DS18B20_temperature_sensors(Connection * conn, int pin, etl::string<64> mqtt_main_topic);
-        etl::string<64> getMqttTopic();
+        DS18B20_temperature_sensors(Connection * conn, int pin, etl::string<MQTT_TOPIC_STRING_LENGTH> mqtt_main_topic);
+        etl::string<MQTT_TOPIC_STRING_LENGTH> getMqttTopic();
         etl::string<24> getName(int deviceIndex);
         etl::string<24> convertAddressToString(DeviceAddress address);
         etl::string<24> getAddressString(int deviceIndex);
@@ -66,7 +69,7 @@ class DS18B20_temperature_sensors
         uint8_t _numberOfDevices;
         uint8_t _currentDevice;
         etl::string<32> _name;
-        etl::string<64> _mqtt_main_topic;
+        etl::string<MQTT_TOPIC_STRING_LENGTH> _mqtt_main_topic;
         etl::string<24> _addressMap[127];
         etl::string<24> _nameMap[127];
         size_t _mapSize;
@@ -80,7 +83,7 @@ class InputMomentary {
             Connection * conn, 
             int pin, 
             etl::string<32> name, 
-            etl::string<64> mqtt_topic, 
+            etl::string<MQTT_TOPIC_STRING_LENGTH> mqtt_topic, 
             float analog_threshold_V = 0, // uses digitalRead when 0
             bool on_level = HIGH,
             u_int32_t debounce_delay = 50,
@@ -95,7 +98,7 @@ class InputMomentary {
         void set_sticky_button_timer(Timer sticky_timer);
         bool is_sticky_held();
         u_int32_t get_remaining_sticky_hold_time_ms();
-        etl::string<64> get_mqtt_topic();
+        etl::string<MQTT_TOPIC_STRING_LENGTH> get_mqtt_topic();
         etl::string<32> get_name();
         void press();
 
@@ -114,8 +117,8 @@ class InputMomentary {
         Connection * _conn;
         int _pin;
         etl::string<32> _name;
-        etl::string<64> _mqtt_topic;
-        etl::string<64> _mqtt_set_topic;
+        etl::string<MQTT_TOPIC_STRING_LENGTH> _mqtt_topic;
+        etl::string<MQTT_TOPIC_STRING_LENGTH> _mqtt_set_topic;
         int _pressed;
         int _unpressed;
         u_int32_t _debounce_delay;
@@ -138,42 +141,73 @@ class InputMomentary {
         bool _virtual_press = false;
 };
 
-// #define HAN_READ_TIMEOUT_MS 100
-// #define HAN_MAX_MESSAGE_SIZE 2000
+#define HAN_READ_TIMEOUT_MS 100
+#define HAN_MAX_MESSAGE_SIZE 2000
 
-// class HANreader {
-//     public:
-//         HANreader(Connection * conn, String mqttTopic, uint8_t RXpin, uint8_t TXpin);
-//         void begin();
-//         void end();
-//         void tick();
-//         HardwareSerial serialHAN;
-//         void parse_message(String message);
-//         void parse_message();
+class HANreader {
+    public:
+        HANreader(Connection * conn, etl::string<MQTT_TOPIC_STRING_LENGTH> mqttTopic, uint8_t RXpin, uint8_t TXpin);
+        void begin();
+        void end();
+        void tick();
+        HardwareSerial serialHAN;
+        void parse_message(String message);
+        void parse_message();
 
-//         struct han_line {
-//             u_int8_t obis_code[6];
-//             String name;
-//             String unit;
-//             String topic;
-//         };
+        struct han_line {
+            u_int8_t obis_code[6];
+            etl::string<32> name;
+            etl::string<16> unit;
+            etl::string<32> subtopic;
+        };
 
-//     private:
-//         Connection * _conn;
-//         String _mqttTopic;
-//         uint8_t _RXpin;
-//         uint8_t _TXpin;
-//         int16_t _state;
-//         int16_t _prev_state;
-//         char _recv_char;
-//         String _message;
-//         uint8_t _message_buf[HAN_MAX_MESSAGE_SIZE];
-//         uint16_t _message_buf_pos;
-//         void _receive_char();
-//         uint32_t _last_byte_millis;
-//         bool _match_sequence(uint16_t);
-//         u_int16_t _no_han_lines;
-// };
+        // define all OBIS codes and corresponding topics here
+        han_line version {.obis_code = { 0x01, 0x01, 0x00, 0x02, 0x81, 0xff }, .name="OBIS list version", .unit="", .subtopic="obis_list_version"  };
+        han_line id {.obis_code = { 0x00, 0x00, 0x60, 0x01, 0x00, 0xff }, .name="Meter ID", .unit="", .subtopic="meter_id"  };
+        han_line type {.obis_code = { 0x00, 0x00, 0x60, 0x01, 0x07, 0xff }, .name="Meter type", .unit="", .subtopic="meter_type"  };
+        
+        han_line active_import {.obis_code = { 0x01, 0x00, 0x01, 0x07, 0x00, 0xff }, .name="Active import", .unit="W", .subtopic="active_import_W"  };
+        han_line active_export {.obis_code = { 0x01, 0x00, 0x02, 0x07, 0x00, 0xff }, .name="Active export", .unit="W", .subtopic="active_export_W"  };
+        han_line reactive_import {.obis_code = { 0x01, 0x00, 0x03, 0x07, 0x00, 0xff }, .name="Reactive import", .unit="VAr", .subtopic="reactive_import_VAr"  };
+        han_line reactive_export {.obis_code = { 0x01, 0x00, 0x04, 0x07, 0x00, 0xff }, .name="Reactive export", .unit="VAr", .subtopic="reactive_export_VAr"  };
+
+        han_line current_L1 {.obis_code = { 0x01, 0x00, 0x1f, 0x07, 0x00, 0xff }, .name="Current L1", .unit="A", .subtopic="current_l1_A"  };
+        han_line current_L2 {.obis_code = { 0x01, 0x00, 0x33, 0x07, 0x00, 0xff }, .name="Current L2", .unit="A", .subtopic="current_l2_A"  };
+        han_line current_L3 {.obis_code = { 0x01, 0x00, 0x47, 0x07, 0x00, 0xff }, .name="Current L3", .unit="A", .subtopic="current_l3_A"  };
+
+        han_line voltage_L1 {.obis_code = { 0x01, 0x00, 0x20, 0x07, 0x00, 0xff }, .name="Voltage L1", .unit="V", .subtopic="voltage_l1_V"  };
+        han_line voltage_L2 {.obis_code = { 0x01, 0x00, 0x34, 0x07, 0x00, 0xff }, .name="Voltage L2", .unit="V", .subtopic="voltage_l2_V"  };
+        han_line voltage_L3 {.obis_code = { 0x01, 0x00, 0x48, 0x07, 0x00, 0xff }, .name="Voltage L3", .unit="V", .subtopic="voltage_l3_V"  };
+
+        han_line meter_clock {.obis_code = { 0x00, 0x00, 0x01, 0x00, 0x00, 0xff }, .name="Clock", .unit="", .subtopic="clock"  };
+    
+        han_line cum_active_import {.obis_code =   { 0x01, 0x00, 0x01, 0x08, 0x00, 0xff }, .name="Cummulative active import", .unit="kWh", .subtopic="cum_active_import_kWh"  };
+        han_line cum_active_export {.obis_code =   { 0x01, 0x00, 0x02, 0x08, 0x00, 0xff }, .name="Cummulative active export", .unit="kWh", .subtopic="cum_active_export_kWh"  };
+        han_line cum_reactive_import {.obis_code = { 0x01, 0x00, 0x03, 0x08, 0x00, 0xff }, .name="Cummulative reactive import", .unit="kVArh", .subtopic="cum_reactive_import_kVArh"  };
+        han_line cum_reactive_export {.obis_code = { 0x01, 0x00, 0x04, 0x08, 0x00, 0xff }, .name="Cummulative reactive export", .unit="kVArh", .subtopic="cum_reactive_export_kVArh"  };
+
+        etl::vector<han_line, 20> han_lines = {version, id, type, active_import, active_export, reactive_import, reactive_export, current_L1, current_L2, current_L3, 
+                            voltage_L1, voltage_L2, voltage_L3, meter_clock, cum_active_import, cum_active_export, cum_reactive_import, cum_reactive_export };
+        // _no_han_lines = 18;
+
+    private:
+        Connection * _conn;
+        etl::string<MQTT_TOPIC_STRING_LENGTH> _mqttTopic;
+        uint8_t _RXpin;
+        uint8_t _TXpin;
+        int16_t _state;
+        int16_t _prev_state;
+        char _recv_char;
+        etl::string<MQTT_PAYLOAD_STRING_LENGTH> _message;
+        uint8_t _message_buf[HAN_MAX_MESSAGE_SIZE];
+        uint16_t _message_buf_pos;
+        void _receive_char();
+        uint32_t _last_byte_millis;
+        bool _match_sequence(uint16_t);
+        u_int16_t _no_han_lines;
+        etl::string<32> _value_string;
+        etl::string<88> _subtopic;
+};
 
 // #define VEDIRECT_TIMEOUT_MS 100
 // #define VEDIRECT_MESSAGE_SIZE 2000
