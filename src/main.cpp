@@ -35,7 +35,7 @@ void setup() {
 
   conn.connect( WIFI_SSID,
     WIFI_PW,
-    "192.168.2.7",
+    "192.168.2.4",
     MAINTOPIC,
     "",
     "",
