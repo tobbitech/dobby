@@ -330,15 +330,15 @@ class StepperMotorDoor
         void close();
         void moveToStep(uint16_t);
         void setStepsToOpen(uint16_t steps);
-        void setAcceleration(float acceleration);
-        void setMaxSpeed(float speed);
-        void maintain();
+        // void setAcceleration(float acceleration);
+        // void setMaxSpeed(float speed);
+        void tick();
         void resetInClosedPosition();
         uint16_t getCurrentPosition();
         void changeDirection();
         etl::string<64> getMqttTopic();
         etl::string<32> getName();
-        // AccelStepper _stepper;
+        void parse_action(etl::string<16> action_string);
 
     private:
         Connection * _conn;

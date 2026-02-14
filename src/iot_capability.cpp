@@ -989,6 +989,10 @@ void StepperMotorDoor::begin() {
     _stepper->setEnablePin(_pin_coil_enable);
     _conn->subscribe_mqtt_topic(_mqtt_topic);
     log_info("Stepper motor %s created on topic %s", _name.c_str(), _mqtt_topic.c_str() );
+    // register action
+    _conn->register_action(_mqtt_topic, [this](etl::string<16> action_string) { 
+        this->parse_action(action_string); 
+    });
 }
 
 etl::string<64> StepperMotorDoor::getMqttTopic() {
@@ -999,7 +1003,7 @@ etl::string<32> StepperMotorDoor::getName() {
     return(_name);
 }
 
-void StepperMotorDoor::maintain() {
+void StepperMotorDoor::tick() {
     // run this function as often as possible in main loop
     _stepper->run();
      if (_stepper->distanceToGo() == 0)
@@ -1032,29 +1036,38 @@ void StepperMotorDoor::setStepsToOpen(uint16_t steps) {
     }
 }
 
-// void StepperMotorDoor::setMaxSpeed(float max_speed) {
-//     _stepper.setMaxSpeed(max_speed);
-// }
-
-// void StepperMotorDoor::setAcceleration(float acceleration) {
-//     _stepper.setAcceleration(acceleration);
-// }
-
-// void StepperMotorDoor::resetInOpenPosition() {
-//     _stepper.setCurrentPosition()
-// }
-
 void StepperMotorDoor::resetInClosedPosition() {
     _stepper->setCurrentPosition(0);
 }
 
-// uint16_t StepperMotorDoor::getCurrentPosition() {
-//     uint16_t position = _stepper.currentPosition();
-//     _conn_pointer->debug("Stepper " + _name + " position is: " + String(position));
-
-//     return(position);
-// }
-
 void StepperMotorDoor::changeDirection() {
     _change_positive_direction = !_change_positive_direction;
+}
+
+void StepperMotorDoor::parse_action(etl::string<16> action_string) {
+        // action_string is MQTT message received on action topic
+    if (action_string == "open") {
+        open();
+        return;
+    }
+
+    if (action_string == "close") {
+        close();
+        return;
+    }
+
+    float percent_open = etl::to_arithmetic<float>(action_string);
+    log_debug("Received float value %.2f", percent_open);
+    if (percent_open < 0.0 || percent_open > 1.0) {
+        log_error("Percent open outside valid range [0, 1]: %.2f", percent_open);
+        return;
+    }
+    else {
+        uint16_t step_to_move_to = round(_steps_to_open*percent_open);
+        moveToStep(step_to_move_to);
+        return;
+    }
+
+    log_error("Cannot parse action string: %s", action_string);
+    return;
 }
