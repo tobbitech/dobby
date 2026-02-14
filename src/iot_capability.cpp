@@ -962,3 +962,99 @@ void HANreader::parse_message() {
 //     }
 
 // }
+
+
+
+StepperMotorDoor::StepperMotorDoor(
+        Connection * conn_ptr, 
+        AccelStepper * stepper_ptr,
+        etl::string<32> name, 
+        etl::string<64> mqtt_topic,
+        int pin_coil_enable
+    )
+{
+    _conn = conn_ptr;
+    _stepper = stepper_ptr;
+    _name = name;
+    _mqtt_topic = mqtt_topic;
+    _pin_coil_enable = pin_coil_enable;
+    _change_positive_direction = false;
+}
+
+void StepperMotorDoor::begin() {
+    pinMode(_pin_coil_enable, OUTPUT);
+    _stepper->setAcceleration(100.0);
+    _stepper->setMaxSpeed(200.0);
+    StepperMotorDoor::setStepsToOpen(50);
+    _stepper->setEnablePin(_pin_coil_enable);
+    _conn->subscribe_mqtt_topic(_mqtt_topic);
+    log_info("Stepper motor %s created on topic %s", _name.c_str(), _mqtt_topic.c_str() );
+}
+
+etl::string<64> StepperMotorDoor::getMqttTopic() {
+    return(_mqtt_topic);
+}
+
+etl::string<32> StepperMotorDoor::getName() {
+    return(_name);
+}
+
+void StepperMotorDoor::maintain() {
+    // run this function as often as possible in main loop
+    _stepper->run();
+     if (_stepper->distanceToGo() == 0)
+        // disable output
+        digitalWrite(_pin_coil_enable, LOW);
+}
+
+void StepperMotorDoor::moveToStep(uint16_t step) {
+    //enable output
+    digitalWrite(_pin_coil_enable, HIGH);
+    _stepper->moveTo(step);
+    _stepper->disableOutputs();
+    log_info("Moved stepper %s to step %d", _name.c_str(), step);
+}
+
+void StepperMotorDoor::open() {
+    StepperMotorDoor::moveToStep(_steps_to_open);
+    log_info("Opened %s", _name.c_str() );
+}
+
+void StepperMotorDoor::close() {
+    StepperMotorDoor::moveToStep(0);
+    log_info("Closed %s", _name.c_str());
+}
+
+void StepperMotorDoor::setStepsToOpen(uint16_t steps) {
+    _steps_to_open = steps;
+    if ( _change_positive_direction ) {
+        _steps_to_open = (-1) * steps;
+    }
+}
+
+// void StepperMotorDoor::setMaxSpeed(float max_speed) {
+//     _stepper.setMaxSpeed(max_speed);
+// }
+
+// void StepperMotorDoor::setAcceleration(float acceleration) {
+//     _stepper.setAcceleration(acceleration);
+// }
+
+// void StepperMotorDoor::resetInOpenPosition() {
+//     _stepper.setCurrentPosition()
+// }
+
+void StepperMotorDoor::resetInClosedPosition() {
+    _stepper->setCurrentPosition(0);
+}
+
+// uint16_t StepperMotorDoor::getCurrentPosition() {
+//     uint16_t position = _stepper.currentPosition();
+//     _conn_pointer->debug("Stepper " + _name + " position is: " + String(position));
+
+//     return(position);
+// }
+
+void StepperMotorDoor::changeDirection() {
+    _change_positive_direction = !_change_positive_direction;
+}

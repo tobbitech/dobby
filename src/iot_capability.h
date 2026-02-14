@@ -7,6 +7,7 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <HardwareSerial.h>
+#include <AccelStepper.h>
 
 #define MQTT_TOPIC_STRING_LENGTH 64
 #define MQTT_PAYLOAD_STRING_LENGTH 256
@@ -313,3 +314,42 @@ class HANreader {
 //         uint32_t _minimum_off_time;
 
 // };
+
+class StepperMotorDoor
+{
+    public:
+        StepperMotorDoor(
+            Connection * conn_ptr,
+            AccelStepper * stepper_ptr,
+            etl::string<32> name, 
+            etl::string<64> mqtt_topic,
+            int pin_coil_enable
+        );
+        void begin();
+        void open();
+        void close();
+        void moveToStep(uint16_t);
+        void setStepsToOpen(uint16_t steps);
+        void setAcceleration(float acceleration);
+        void setMaxSpeed(float speed);
+        void maintain();
+        void resetInClosedPosition();
+        uint16_t getCurrentPosition();
+        void changeDirection();
+        etl::string<64> getMqttTopic();
+        etl::string<32> getName();
+        // AccelStepper _stepper;
+
+    private:
+        Connection * _conn;
+        AccelStepper * _stepper;
+        etl::string<32> _name;
+        etl::string<64> _mqtt_topic;
+        int _pin_coil_enable;
+        uint16_t _stepper_max_speed;
+        uint16_t _stepper_acceleration;
+        uint16_t _steps_to_open;
+        uint16_t _current_step;
+        bool _change_positive_direction;
+
+};
