@@ -329,9 +329,11 @@ class StepperMotorDoor
         void open();
         void close();
         void moveToStep(uint16_t);
+        void open_steps(uint16_t steps);
+        void close_steps(uint16_t steps);
         void setStepsToOpen(uint16_t steps);
-        // void setAcceleration(float acceleration);
-        // void setMaxSpeed(float speed);
+        void setAcceleration(float acceleration);
+        void setMaxSpeed(float speed);
         void tick();
         void resetInClosedPosition();
         uint16_t getCurrentPosition();
@@ -339,6 +341,7 @@ class StepperMotorDoor
         etl::string<64> getMqttTopic();
         etl::string<32> getName();
         void parse_action(etl::string<16> action_string);
+        void connect_open_limit_switch(InputMomentary * open_limit_switch);
 
     private:
         Connection * _conn;
@@ -351,5 +354,7 @@ class StepperMotorDoor
         uint16_t _steps_to_open;
         uint16_t _current_step;
         bool _change_positive_direction;
+        InputMomentary * _open_limit_switch = nullptr;
+
 
 };

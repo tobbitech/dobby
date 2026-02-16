@@ -1005,6 +1005,12 @@ etl::string<32> StepperMotorDoor::getName() {
 
 void StepperMotorDoor::tick() {
     // run this function as often as possible in main loop
+    if (_open_limit_switch != nullptr && _open_limit_switch->is_pressed()) {
+        log_info("Open limit switch pressed for stepper %s. Stopping.", _name.c_str());
+        _stepper->stop();
+        close_steps(100); // move a bit away from the switch to avoid it being pressed at startup
+    }
+
     _stepper->run();
      if (_stepper->distanceToGo() == 0)
         // disable output
@@ -1015,8 +1021,28 @@ void StepperMotorDoor::moveToStep(uint16_t step) {
     //enable output
     digitalWrite(_pin_coil_enable, HIGH);
     _stepper->moveTo(step);
-    _stepper->disableOutputs();
+    // _stepper->disableOutputs();
     log_info("Moved stepper %s to step %d", _name.c_str(), step);
+}
+
+void StepperMotorDoor::open_steps(uint16_t steps) {
+    //enable output
+    digitalWrite(_pin_coil_enable, HIGH);
+    if ( _change_positive_direction ) {
+        steps = (-1) * steps;
+    }
+    _stepper->moveTo(steps);
+    log_info("Opened %s by moving %d steps", _name.c_str(), steps);
+}
+
+void StepperMotorDoor::close_steps(uint16_t steps) {
+    //enable output
+    digitalWrite(_pin_coil_enable, HIGH);
+    if ( _change_positive_direction ) {
+        steps = (-1) * steps;
+    }
+    _stepper->moveTo(-steps);
+    log_info("Closed %s by moving %d steps", _name.c_str(), steps);
 }
 
 void StepperMotorDoor::open() {
@@ -1036,12 +1062,24 @@ void StepperMotorDoor::setStepsToOpen(uint16_t steps) {
     }
 }
 
+void StepperMotorDoor::setAcceleration(float acceleration) {
+    _stepper->setAcceleration(acceleration);
+    log_info("Set acceleration of stepper %s to %.2f", _name.c_str(), acceleration);
+}
+
+void StepperMotorDoor::setMaxSpeed(float speed) {
+    _stepper->setMaxSpeed(speed);
+    log_info("Set max speed of stepper %s to %.2f", _name.c_str(), speed);
+}
+
 void StepperMotorDoor::resetInClosedPosition() {
     _stepper->setCurrentPosition(0);
+    log_info("Reset stepper %s to closed position (step 0)", _name.c_str());
 }
 
 void StepperMotorDoor::changeDirection() {
     _change_positive_direction = !_change_positive_direction;
+    log_info("Changed direction of stepper %s to %s.", _name.c_str(), _change_positive_direction ? "negative" : "positive");
 }
 
 void StepperMotorDoor::parse_action(etl::string<16> action_string) {
@@ -1070,4 +1108,9 @@ void StepperMotorDoor::parse_action(etl::string<16> action_string) {
 
     log_error("Cannot parse action string: %s", action_string);
     return;
+}
+
+void StepperMotorDoor::connect_open_limit_switch(InputMomentary * open_limit_switch) {
+    _open_limit_switch = open_limit_switch;
+    log_info("Connected top limit %s switch to stepper %s", _open_limit_switch->get_name().c_str(), _name.c_str());
 }
