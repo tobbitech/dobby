@@ -1,10 +1,13 @@
 #pragma once
 #include <Arduino.h>
 #include <ArduinoOTA.h>
-#include <command.h>
+#include "command.h"
+#include "mqttConnection.h"
 #include "logging.h"
+#include <time.h>
 
 extern CommandParser cmd;
+extern Connection conn;
 
 namespace CMD {
 
@@ -18,6 +21,26 @@ namespace CMD {
 
     void status(CommandArgs args) {
         Serial.println("Printing status...  (not implemented yet)");
+        // status message:
+        // Memory
+        // Time + uptime
+        // mqtt messages sent
+        // mqtt messages received
+        log_response("Device name: %s", conn.get_mqtt_client_name() );
+        log_response("Connected to %s with RSSI %ddB", WiFi.SSID().c_str(), WiFi.RSSI() );
+        log_response("Using %.1f%% of memory", (float(ESP.getFreeHeap())/float(ESP.getHeapSize()))*100 );
+
+        uint32_t uptime_ms = (millis() / 1000);
+        uint16_t days = uptime_ms / (24*60*60);
+        uptime_ms %= (24*60*60);
+        uint8_t hours = uptime_ms / (60*60);
+        uptime_ms %= (60*60);
+        uint8_t minutes = uptime_ms / 60;
+        uint8_t seconds = uptime_ms % 60;
+
+        log_response("Uptime: %dd %dh %dm %ds", days, hours, minutes, seconds);
+        log_response("Time is: %s", conn.get_time_string().c_str());
+
     }
 
     void enable_ota(CommandArgs args) {

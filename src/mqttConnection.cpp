@@ -34,6 +34,10 @@ void Connection::set_mqtt_client_name(etl::string<64> client_name) {
     _client_name = client_name;
 }
 
+etl::string<64> Connection::get_mqtt_client_name() {
+    return(_client_name);
+}
+
 // void set_ssl_ca(etl::string<64> ca) {
 //     _wifi_client.setCACert(ca);
 // }
@@ -203,8 +207,7 @@ void Connection::wifi_mqtt_connect() {
             ESP.restart();
         }
         log_info("Connected to WiFi after %d tries", tries);
-        auto timestamp = get_timestamp();
-        log_info("Time is: %d", timestamp);
+        log_info("Time is: %s", get_time_string().c_str());
         }
     _wifi_ok = true;
     set_status_leds();
@@ -217,6 +220,10 @@ void Connection::wifi_mqtt_connect() {
     _mqtt_client.connect(_client_name.c_str() );
     _mqtt_client.subscribe(_command_topic.c_str() );
     log_info("Connected to broker as %s", _client_name.c_str());
+
+    // sync ESP clock with NTP server
+    //        GMT+1  Daylight saving
+    configTime(3600, 3600, "0.no.pool.ntp.org", "1.no.pool.ntp.org", "2.no.pool.ntp.org");
 }
 
 void Connection::subscribe_mqtt_topic(etl::string<64> topic)
@@ -336,22 +343,17 @@ void Connection::publish_log(etl::string<256> log_message) {
     publish(_log_topic, log_message);
 }
 
-unsigned long Connection::get_timestamp()
-{
-    NTPClient time_client(_ntp_udp);
-    time_client.begin();
-    time_client.update();
-    unsigned long timestamp = time_client.getEpochTime();
-    return(timestamp);
-}
-
-etl::string<64> Connection::get_timestamp_millis()
-{
-    unsigned long seconds = Connection::get_timestamp();
-    etl::string<64> timestamp;
-    etl::to_string(seconds, timestamp, etl::format_spec(), false);
-    timestamp.append("000");
-    return(timestamp);
+etl::string<64> Connection::get_time_string() {
+    struct tm timeinfo;
+    // Get the local time, with a 1 second timeout for initial sync
+    if (!getLocalTime(&timeinfo, 1000)) { 
+        log_error("Failed to obtain time");
+    }
+    char timeString[100]; // Buffer to hold the formatted time string
+    // Format the time using strftime
+    strftime(timeString, sizeof(timeString), "%A, %B %d %Y %H:%M:%S", &timeinfo);
+    return(timeString);
+    
 }
 
 void Connection::register_action(etl::string<64> topic, std::function<void(etl::string<16>)> func) {

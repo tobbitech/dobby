@@ -3,8 +3,6 @@
 #include <Arduino.h>
 #include <PubSubClient.h>
 #include <WiFi.h>
-#include <NTPClient.h>
-#include <WiFiUdp.h>
 #include <WiFiClientSecure.h>
 #include <WiFiClient.h>
 #include "logging.h"
@@ -12,6 +10,7 @@
 #include <etl/to_arithmetic.h>
 #include "command.h"
 #include <functional>
+#include <time.h>
 
 // #define ARDUINO_IOT_USE_SSL
 #define HEARTBEAT_INTERVAL_MS 5000
@@ -41,14 +40,14 @@ class Connection
         int publish(etl::string<128> topic, etl::string<256> message);
         void publish_log(etl::string<256>);
         void set_status_leds();
-        unsigned long get_timestamp();
-        etl::string<64> get_timestamp_millis();
+        etl::string<64> get_time_string();
         void set_wifi_ssid(etl::string<64> ssid);
         void set_wifi_passwd(etl::string<64> passwd);
         void set_mqtt_host(etl::string<64> host);
         void set_mqtt_port(int port);
         void set_mqtt_port(etl::string<64> port);
         void set_mqtt_client_name(etl::string<64> clientName);
+        etl::string<64> get_mqtt_client_name();
         void set_mqtt_main_topic(etl::string<64> mainTopic);
         void subscribe_mqtt_topic(etl::string<64> topic);
         // void set_ssl_ca(etl::string<64> ca);
@@ -97,8 +96,6 @@ class Connection
         bool _wifi_ok;
         int _wifi_led_pin;
         int _mqtt_led_pin;
-        WiFiUDP _ntp_udp;
-        NTPClient _time_client(WiFiUDP);
         uint32_t _last_number_of_callbacks;
         uint32_t _last_heartbeat_millis;
         etl::vector<Action, 20> _action_list;
