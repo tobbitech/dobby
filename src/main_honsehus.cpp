@@ -143,7 +143,7 @@ void loop()
 
   if (telemetry_interval_timer.is_done())
   {
-    log_info("Publishing all temperatures");
+    log_debug("Publishing all temperatures");
     temperature_sensors.publishAllTemperatures();
   }
 }

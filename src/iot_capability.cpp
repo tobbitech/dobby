@@ -199,7 +199,7 @@ void DS18B20_temperature_sensors::publishAllTemperatures()
    uint32_t request_start_time = millis();
    _sensors.requestTemperatures();
    uint32_t request_time_ms = millis() - request_start_time;
-   log_info("Requested all sensors in %dms", request_time_ms);
+   log_debug("Requested all DS18B20 in %dms", request_time_ms);
 }   
 
 
@@ -226,11 +226,10 @@ void DS18B20_temperature_sensors::_get_sensor_data_nonblocking() {
     etl::string<88> deviceMqttTopic(_mqtt_main_topic);
     deviceMqttTopic += "/" ;
     deviceMqttTopic += _deviceNames[i];
-    log_debug("Device name is: %s and topic is %s", _deviceNames[i], deviceMqttTopic);
     etl::string<16> temperature_string;
     temperature_string.assign(etl::to_string(_sensors.getTempC(_deviceAddresses[i]), temperature_string, etl::format_spec().precision(2)));
     _conn->publish(deviceMqttTopic, temperature_string);
-    log_info("%s: %.2fC", _deviceNames[i].c_str(), _sensors.getTempC(_deviceAddresses[i]));
+    log_debug("%s: %.2fC", _deviceNames[i].c_str(), _sensors.getTempC(_deviceAddresses[i]));
 
     if (_currentDevice >= _numberOfDevices ) {
         _getting_data = false;
