@@ -336,7 +336,7 @@ class StepperMotorDoor
         void setMaxSpeed(float speed);
         void tick();
         void resetInClosedPosition();
-        uint16_t getCurrentPosition();
+        long getCurrentPosition();
         void changeDirection();
         etl::string<64> getMqttTopic();
         etl::string<32> getName();

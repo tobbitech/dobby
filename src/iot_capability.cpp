@@ -223,9 +223,10 @@ float DS18B20_temperature_sensors::getTemperatureByName(etl::string<24> deviceNa
 void DS18B20_temperature_sensors::_get_sensor_data_nonblocking() {
     int i = _currentDevice++;
 
-    etl::string<88> deviceMqttTopic = _mqtt_main_topic;
+    etl::string<88> deviceMqttTopic(_mqtt_main_topic);
     deviceMqttTopic += "/" ;
     deviceMqttTopic += _deviceNames[i];
+    log_debug("Device name is: %s and topic is %s", _deviceNames[i], deviceMqttTopic);
     etl::string<16> temperature_string;
     temperature_string.assign(etl::to_string(_sensors.getTempC(_deviceAddresses[i]), temperature_string, etl::format_spec().precision(2)));
     _conn->publish(deviceMqttTopic, temperature_string);
@@ -1077,6 +1078,11 @@ void StepperMotorDoor::resetInClosedPosition() {
     log_info("Reset stepper %s to closed position (step 0)", _name.c_str());
 }
 
+long StepperMotorDoor::getCurrentPosition() {
+    long pos = _stepper->currentPosition();
+    return(pos);
+}
+
 void StepperMotorDoor::changeDirection() {
     _change_positive_direction = !_change_positive_direction;
     log_info("Changed direction of stepper %s to %s.", _name.c_str(), _change_positive_direction ? "negative" : "positive");
@@ -1084,6 +1090,17 @@ void StepperMotorDoor::changeDirection() {
 
 void StepperMotorDoor::parse_action(etl::string<16> action_string) {
         // action_string is MQTT message received on action topic
+    if (action_string == "reset_open") {
+        setStepsToOpen(getCurrentPosition());
+        return;
+    }
+
+    if (action_string == "reset_closed") {
+        resetInClosedPosition();
+        return;
+    }
+
+
     if (action_string == "open") {
         open();
         return;
