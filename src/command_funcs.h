@@ -26,7 +26,7 @@ namespace CMD {
         // Time + uptime
         // mqtt messages sent
         // mqtt messages received
-        log_response("Device name: %s", conn.get_mqtt_client_name() );
+        log_response("Device name: %s", conn.get_mqtt_client_name().c_str() );
         log_response("Connected to %s with RSSI %ddB", WiFi.SSID().c_str(), WiFi.RSSI() );
         log_response("Using %.1f%% of memory", (float(ESP.getFreeHeap())/float(ESP.getHeapSize()))*100 );
 
@@ -97,7 +97,7 @@ namespace CMD {
         // arg 1: SSID
         // arg 2: password
 
-        log_warning("Settint wifi not implemented yet");
+        log_warning("Setting wifi not implemented yet");
     }
 
 
