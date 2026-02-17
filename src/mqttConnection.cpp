@@ -302,7 +302,6 @@ void Connection::maintain()
         etl::string<32> heartbeat_string;
         etl::to_string(millis(), heartbeat_string);
         publish(_heartbeat_topic, heartbeat_string);
-        log_debug("Heartbeat %s", heartbeat_string);
         _last_heartbeat_millis = millis();
     }
 }
