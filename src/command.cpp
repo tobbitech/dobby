@@ -101,8 +101,11 @@ void CommandParser::log_cmd_help_text(uint16_t command_id) {
 }
 
 void CommandParser::add(uint16_t command_id, void (*cmd_func_ptr)(CommandArgs args), etl::string<64> help_text) {
+    if (command_id >= NO_COMMANDS) {
+        log_error("Cannot add command ID %d. Max command ID: %d", command_id, NO_COMMANDS - 1 );
+        return;
+    }
     auto command = Command(command_id, cmd_func_ptr, help_text);
-    
     _cmd_list[command_id] = command;
 }
 

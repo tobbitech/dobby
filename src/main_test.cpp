@@ -20,6 +20,17 @@ OnOffSwitch led5(&conn, LED_GAUGE_H4, "LED 5", MAINTOPIC "/led5");
 
 InputMomentary boot_sw(&conn, BOOT_SWITCH_PIN, "Boot", MAINTOPIC "/button1");
 
+void print_args(CommandArgs args) {
+  if ( args.n_args == 0) {
+    log_response("No arguments given");
+    return;
+  }
+
+  for (uint8_t i = 0; i < args.n_args; i++) {
+    log_response("Arg %d: %s", i, args.argv[i].c_str() );
+  }
+}
+
 void setup() {
   set_log_level(log_severity::INFO);
   pinMode(39, OUTPUT); // fix dim LED
@@ -32,6 +43,7 @@ void setup() {
   cmd.add(5, CMD::set_log_level, "Set log level. Arg1: DEBUG INFO WARNING ERROR CRITICAL RESPONSE");
   cmd.add(6, CMD::log_ip, "Show device IP address");
   cmd.add(7, CMD::log_mac, "Show device hardware address");
+  cmd.add(10, print_args, "Lists command arguments given to this command");
 
   conn.connect( WIFI_SSID,
     WIFI_PW,

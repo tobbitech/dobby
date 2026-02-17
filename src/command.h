@@ -6,7 +6,7 @@
 #include <logging.h>
 
 
-#define NO_COMMANDS 10
+#define NO_COMMANDS 20
 
 #define ETLSTR etl::string<128>
 
