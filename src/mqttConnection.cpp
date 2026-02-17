@@ -276,16 +276,11 @@ void Connection::maintain()
         if ( ! (number_mqtt_callbacks == _last_number_of_callbacks + 1) ) {
             log_warning("%d mqtt callbacks ignored", number_mqtt_callbacks - _last_number_of_callbacks);
         }
-
-        log_info("MQTT message %d (%d bytes) on %s", number_mqtt_callbacks, received_mqtt_message.size(), received_mqtt_topic.c_str());
-        log_debug("Received data: %s", received_mqtt_message.c_str());
-
         // handle commands from MQTT
         if (received_mqtt_topic == _command_topic) {
             // message is a command
             cmd.parse(received_mqtt_message);
         }
-
         // Handle actions
         // Run command corresponding to the action topic
         for (size_t i = 0; i < _action_list.size(); i++) {
@@ -294,16 +289,12 @@ void Connection::maintain()
                 _action_list[i].function(received_mqtt_message);
             }
         }
-
-
-
         // clear variables and get ready for next message
         _last_number_of_callbacks = number_mqtt_callbacks;
         received_mqtt_message.clear();
         received_mqtt_topic.clear();
         new_mqtt_message = false;
     }
-
     // send heartbeat if it is time
     if ( (millis() - _last_heartbeat_millis) > HEARTBEAT_INTERVAL_MS ) {
         etl::string<32> heartbeat_string;
