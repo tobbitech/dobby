@@ -464,31 +464,35 @@ u_int16_t crc16x25(unsigned char *data_p, u_int16_t lenght) {
 }
 
 void HANreader::parse_message() {
-    for (int i = 0; i < _message_buf_pos; i++ ) {
-            etl::string<2> hex_byte;
-            etl::to_string(_message_buf[i], hex_byte, etl::format_spec().base(16).fill('0').width(2));
-            _hex_message += hex_byte;
-    }
-    // publish raw HAN message
+    // for (int i = 0; i < _message_buf_pos; i++ ) {
+    //         etl::string<2> hex_byte;
+    //         etl::to_string(_message_buf[i], hex_byte, etl::format_spec().base(16).fill('0').width(2));
+    //         _hex_message += hex_byte;
+    // }
+    // // publish raw HAN message
     
-    _conn->publish(_han_hex_topic, _hex_message);
-    log_debug("Published HAN hex message (length %d) to topic %s", _hex_message.size(),_han_hex_topic.c_str());
-    _hex_message.clear();
+    // _conn->publish(_han_hex_topic, _hex_message);
+    // log_debug("Published HAN hex message (length %d) to topic %s", _hex_message.size(),_han_hex_topic.c_str());
+    // _hex_message.clear();
+
+    // copy message buffer to message string for safer handling
+    memcpy(_message, _message_buf, _message_buf_pos);
+    _message_length = _message_buf_pos;
     
     // parse HAN message
     size_t i = 0;
-    if (_message_buf[i++] == 0x7e ) { 
+    if (_message[i++] == 0x7e ) { 
         // flag found
         log_debug("HAN message flag found (0x7e)");
         u_int8_t header[6] = {
-            _message_buf[i++],
-            _message_buf[i++],
-            _message_buf[i++],
-            _message_buf[i++],
-            _message_buf[i++],
-            _message_buf[i++]
+            _message[i++],
+            _message[i++],
+            _message[i++],
+            _message[i++],
+            _message[i++],
+            _message[i++]
         };
-        u_int16_t header_checksum = _message_buf[i++] | _message_buf[i++] << 8;
+        u_int16_t header_checksum = _message[i++] | _message[i++] << 8;
         u_int16_t calc_header_checksum = crc16x25(header, 6);
         if (header_checksum == calc_header_checksum ) {
             log_debug("Header checksum OK! %0x", header_checksum);
@@ -502,8 +506,8 @@ void HANreader::parse_message() {
         // jump past next 9 bytes, we dont need them for anything
         i += 9; 
 
-        int datatype = _message_buf[i++];
-        int payload_lines = _message_buf[i++];
+        int datatype = _message[i++];
+        int payload_lines = _message[i++];
 
         // String name = "";
         // String unit = "";
@@ -517,18 +521,18 @@ void HANreader::parse_message() {
         for (int line = 0; line < payload_lines; line++) {
             i += 4; // jump past type identifier in line
             u_int8_t obis_code[6] = {
-                _message_buf[i++],
-                _message_buf[i++],
-                _message_buf[i++],
-                _message_buf[i++],
-                _message_buf[i++],
-                _message_buf[i++]
+                _message[i++],
+                _message[i++],
+                _message[i++],
+                _message[i++],
+                _message[i++],
+                _message[i++]
             };
         
 
             log_debug("OBIS code: %02x %02x %02x %02x %02x %02x\t", obis_code[0], obis_code[1], obis_code[2], obis_code[3], obis_code[4], obis_code[5] );
 
-            for (size_t l = 0; l < _no_han_lines; l++) {
+            for (size_t l = 0; l < han_lines.size(); l++) {
                 if (std::equal(obis_code, obis_code + sizeof obis_code / sizeof *obis_code, han_lines[l].obis_code) ) {
                     current_line_index = l;
                     // name = han_lines[l].name;
@@ -541,22 +545,22 @@ void HANreader::parse_message() {
                 }
             }
 
-            u_int8_t variable_type = _message_buf[i++];
+            u_int8_t variable_type = _message[i++];
 
             if (variable_type == 0x0a ) {
                 // this is a string, have to find length
-                int string_length = _message_buf[i++];
+                int string_length = _message[i++];
                 char string_contents[string_length+1];
                 int j;
                 for (j=0; j<string_length;j++) {
-                     string_contents[j] = _message_buf[i++];
+                     string_contents[j] = _message[i++];
                 }
                 string_contents[j] = '\0';
                 _value_string = string_contents;
             } else if (variable_type == 0x06) {
                 // this is a uint32 -> Energy, cumulative energy
                 u_int32_t value;
-                value = _message_buf[i+3] | _message_buf[i+2] << 8 | _message_buf[i+1] << 16 | _message_buf[i] << 24;
+                value = _message[i+3] | _message[i+2] << 8 | _message[i+1] << 16 | _message[i] << 24;
                 i += 4 + 6; // +6 is the stuff after the value on each line
                 etl::to_string(value, _value_string);
 
@@ -569,16 +573,16 @@ void HANreader::parse_message() {
                 }
             } else if (variable_type == 0x9) {
                 // this is clock time - octet-string
-                int string_length = _message_buf[i++];
+                int string_length = _message[i++];
                 _value_string.clear();
-                uint16_t year  = _message_buf[i+1] | _message_buf[i] << 8;
+                uint16_t year  = _message[i+1] | _message[i] << 8;
                 i += 2;
-                uint8_t  month = _message_buf[i++];
-                uint8_t  day   = _message_buf[i++];
-                uint8_t  dow   = _message_buf[i++];
-                uint8_t  hour  = _message_buf[i++];
-                uint8_t  minute= _message_buf[i++];
-                uint8_t  second= _message_buf[i++];
+                uint8_t  month = _message[i++];
+                uint8_t  day   = _message[i++];
+                uint8_t  dow   = _message[i++];
+                uint8_t  hour  = _message[i++];
+                uint8_t  minute= _message[i++];
+                uint8_t  second= _message[i++];
 
                 etl::to_string(year, _value_string);
                 _value_string += ".";
@@ -597,7 +601,7 @@ void HANreader::parse_message() {
                 //         + String(hour) + ":" + String(minute) + ":" + String(second) + " ";
 
                 // for (int j = 8; j < string_length; j++) {
-                //     uint8_t octet = _message_buf[i++];
+                //     uint8_t octet = _message[i++];
                 //     value_str += String(octet);
                 //     if ( j < string_length -1 ) { 
                 //         value_str += ".";
@@ -606,7 +610,7 @@ void HANreader::parse_message() {
             } else if ( variable_type == 0x10 ){
                 // this is a i16 -> Current
                 int16_t value;
-                value = _message_buf[i+1] | _message_buf[i] << 8;
+                value = _message[i+1] | _message[i] << 8;
                 i += 2 + 6; // +6 is the stuff after the value on each line
                 etl::to_string(value, _value_string);
                 if (han_lines[current_line_index].name=="Current L1" 
@@ -619,7 +623,7 @@ void HANreader::parse_message() {
             } else if ( variable_type == 0x12 ) {
                 // this is a u16 -> Voltage
                 uint16_t value;
-                value = _message_buf[i+1] | _message_buf[i] << 8;
+                value = _message[i+1] | _message[i] << 8;
                 i += 2 + 6; // +6 is the stuff after the value on each line
                 if (han_lines[current_line_index].name=="Voltage L1" 
                     || han_lines[current_line_index].name=="Voltage L2" 
@@ -639,8 +643,8 @@ void HANreader::parse_message() {
         }
 
         // checking packet checksum
-        u_int16_t packet_checksum = _message_buf[i++] | _message_buf[i++] << 8;
-        u_int16_t calc_packet_checksum = crc16x25(_message_buf + 1, i-3);
+        u_int16_t packet_checksum = _message[i++] | _message[i++] << 8;
+        u_int16_t calc_packet_checksum = crc16x25(_message + 1, i-3);
         if (packet_checksum == calc_packet_checksum ) {
             // _conn->debug("Packet checksum OK! " + String(packet_checksum, HEX) );
         } else {
@@ -648,8 +652,8 @@ void HANreader::parse_message() {
             return;
         }
         
-        if (_message_buf[i] != 0x7e) {
-            log_warning("No end flag found. Instead found: %0x. Dropping packet", _message_buf[i]);
+        if (_message[i] != 0x7e) {
+            log_warning("No end flag found. Instead found: %0x. Dropping packet", _message[i]);
         }
     }
 }

@@ -202,12 +202,14 @@ class HANreader {
         char _recv_char;
         // etl::string<HAN_MAX_MESSAGE_SIZE> _message;
         uint8_t _message_buf[HAN_MAX_MESSAGE_SIZE];
-        uint16_t _message_buf_pos;
-        etl::string<HAN_MAX_MESSAGE_SIZE*2> _hex_message;
+        size_t _message_buf_pos;
+        uint8_t _message[HAN_MAX_MESSAGE_SIZE];
+        size_t _message_length;
+        // etl::string<HAN_MAX_MESSAGE_SIZE*2> _hex_message;
         void _receive_char();
         uint32_t _last_byte_millis;
         bool _match_sequence(uint16_t);
-        u_int16_t _no_han_lines;
+        // u_int16_t _no_han_lines;
         etl::string<32> _value_string;
         etl::string<88> _subtopic;
 };
