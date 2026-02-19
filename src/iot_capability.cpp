@@ -500,8 +500,6 @@ void HANreader::parse_message() {
             log_warning("Header checksum error. Dropping package. Got %0x, but expected %0x", header_checksum, calc_header_checksum);
             return;
         }
-        
-        return;
 
         // jump past next 9 bytes, we dont need them for anything
         i += 9; 
@@ -540,9 +538,10 @@ void HANreader::parse_message() {
                     // subtopic = han_lines[l].subtopic;
                     log_debug("OBIS code found: %s subtopic: %s", han_lines[l].name.c_str(), han_lines[l].subtopic.c_str());
                     break;
-                } else {
-                    log_debug("No OBIS code found");
                 }
+                // else {
+                //     log_debug("No OBIS code found");
+                // }
             }
 
             u_int8_t variable_type = _message[i++];

@@ -20,23 +20,6 @@
 #define UART1_RXD 18
 #define DOORBELL_PIN 8
 
-// Code constants
-#define DATA_POINTS_KEY "dataPoints"
-
-// data types
-#define BOOL 1
-#define DOUBLE 2
-#define FLOAT 3
-#define INT32 4
-#define INT16 5
-#define UINT16 6
-#define INT8 7
-#define UINT8 8
-#define POSITION_2D 9
-#define POSITION_3D 10
-#define STRING_ASCII 11
-#define STRING_UTF8 12
-
 CommandParser cmd;
 Connection conn;
 HANreader hanreader(&conn, MQTT_TOPIC "/han", UART1_RXD, UART1_TXD);
