@@ -5,6 +5,8 @@ use rustls::{DigitallySignedStruct, Error as RustlsError, SignatureScheme};
 use std::time::Duration;
 use rumqttc::{Client, Connection, Incoming, QoS, Event};
 use std::time::Instant;
+use std::io::{self, BufRead, Write};
+use std::thread;
 
 #[derive(Debug)]
 pub struct NoCertificateVerification;
@@ -138,15 +140,51 @@ pub fn show_log_from_device(mqtt_client: Client, mut mqtt_connection: Connection
 
 pub fn start_interactive(mqtt_client: Client, mut mqtt_connection: Connection, maintopic: String, device: String) {
     let log_topic: String = format!("{}/{}/log", maintopic, device);
-    let _cmd_topic: String = format!("{}/{}/command", maintopic, device);
+    let cmd_topic: String = format!("{}/{}/command", maintopic, device);
     mqtt_client.subscribe(log_topic, QoS::AtMostOnce).unwrap();
 
-    for (_i, notification) in mqtt_connection.iter().enumerate() {
-        if let Ok(Event::Incoming(Incoming::Publish(publish))) = notification {
-            let log_message = String::from_utf8_lossy(&publish.payload);
-            if log_message.contains("RESPONSE") {
-                println!("{}", log_message);
+    let log_thread = thread::spawn(move || {
+        for notification in mqtt_connection.iter() {
+            if let Ok(Event::Incoming(Incoming::Publish(publish))) = notification {
+                let log_message = String::from_utf8_lossy(&publish.payload);
+                if log_message.contains("RESPONSE") {
+                    let (_head, cmd_response) = log_message.split_once("]").expect(&format!("Wrong response format: {}", log_message));
+                    println!("{}", cmd_response);
+                }
+            }
+        }
+    });
+
+    println!("Interactive mode started. Type commands and press enter. Type 'exit' to quit.");
+    let stdin = io::stdin();
+    let prompt = format!("{}> ", device);
+    print!("{}", prompt);
+    io::stdout().flush().expect("Failed to flush stdout");
+    for line in stdin.lock().lines() {
+        match line {
+            Ok(command) => {
+                let command = command.trim();
+                if command.eq_ignore_ascii_case("exit") {
+                    break;
+                }
+                if let Err(err) = mqtt_client.publish(&cmd_topic, QoS::AtMostOnce, false, command) {
+                    eprintln!("Failed to publish command: {}", err);
+                }
+                if command.eq_ignore_ascii_case("help") {
+                    println!("Type \"1\" to get list of commands from device")
+                }
+                // prepare for next command
+                if ! command.is_empty() {
+                    thread::sleep(Duration::from_millis(500));
+                }
+                print!("{}", prompt);
+                io::stdout().flush().expect("Failed to flush stdout");
+            }
+            Err(err) => {
+                eprintln!("Failed to read from stdin: {}", err);
+                break;
             }
         }
     }
+    drop(log_thread);
 }
