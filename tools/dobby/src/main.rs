@@ -6,7 +6,7 @@ use std::sync::Arc;
 use rustls::ClientConfig;
 
 // use chrono::{TimeZone, Utc, NaiveDateTime};
-use dobby::{NoCertificateVerification, scan_for_devices_for_seconds, show_log_from_device};
+use dobby::{NoCertificateVerification, scan_for_devices_for_seconds, show_log_from_device, start_interactive};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -27,13 +27,13 @@ struct Args {
     #[arg(long, help = "Allow older CA-certificates to be used")]
     insecure: bool,
 
-    #[arg(short='i', long, help = "Start interactive prompt for selected device")]
+    #[arg(short='i', long, default_value_t = String::from(""), help = "Start interactive prompt for selected device")]
     interactive: String,
 
     #[arg(short='s', long, default_value_t = false, help = "Scan for devices")]
     scan: bool,
 
-    #[arg(short='l', long, help = "Show log output for selected device")]
+    #[arg(short='l', long, default_value_t = String::from(""), help = "Show log output for selected device")]
     log: String,
     
 }
@@ -67,10 +67,11 @@ fn main() {
     if args.scan {
         scan_for_devices_for_seconds(mqtt_client, mqtt_connection, args.topic, 10);
     }
-    else if args.interactive {
+    else if args.interactive != "" {
         println!("Start interactive mode for device {}", args.interactive);
+        start_interactive(mqtt_client, mqtt_connection, args.topic, args.interactive)
     }
-    else if args.log {
+    else if args.log != "" {
         println!("--- Log for device {} ---", args.log);
         show_log_from_device(mqtt_client, mqtt_connection, args.topic, args.log);
     }

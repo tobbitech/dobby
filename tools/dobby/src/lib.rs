@@ -135,3 +135,18 @@ pub fn show_log_from_device(mqtt_client: Client, mut mqtt_connection: Connection
         }
     }
 }
+
+pub fn start_interactive(mqtt_client: Client, mut mqtt_connection: Connection, maintopic: String, device: String) {
+    let log_topic: String = format!("{}/{}/log", maintopic, device);
+    let _cmd_topic: String = format!("{}/{}/command", maintopic, device);
+    mqtt_client.subscribe(log_topic, QoS::AtMostOnce).unwrap();
+
+    for (_i, notification) in mqtt_connection.iter().enumerate() {
+        if let Ok(Event::Incoming(Incoming::Publish(publish))) = notification {
+            let log_message = String::from_utf8_lossy(&publish.payload);
+            if log_message.contains("RESPONSE") {
+                println!("{}", log_message);
+            }
+        }
+    }
+}
