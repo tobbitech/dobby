@@ -122,5 +122,16 @@ pub fn scan_for_devices_for_seconds(mqtt_client: Client, mut mqtt_connection: Co
         }
         }
     }
+}
 
+pub fn show_log_from_device(mqtt_client: Client, mut mqtt_connection: Connection, maintopic: String, device: String) {
+    let log_topic: String = format!("{}/{}/log", maintopic, device);
+    mqtt_client.subscribe(log_topic, QoS::AtMostOnce).unwrap();
+
+    for (_i, notification) in mqtt_connection.iter().enumerate() {
+        if let Ok(Event::Incoming(Incoming::Publish(publish))) = notification {
+            let log_message = String::from_utf8_lossy(&publish.payload);
+            println!("{}", log_message);
+        }
+    }
 }
