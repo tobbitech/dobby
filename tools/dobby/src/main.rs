@@ -1,6 +1,7 @@
 use rumqttc::{MqttOptions, QoS, Client, Event, Incoming, Transport, TlsConfiguration};
 // use tokio::{task, time};
 use std::time::Duration;
+use std::time::Instant;
 // use std::error::Error;
 use clap::Parser;
 use std::fs;
@@ -155,7 +156,17 @@ fn main() {
     let mut devices: Vec<Device> = Vec::new();
     // let mut uptimes: Vec<u32> = Vec::new();
 
+    let time_limit = Duration::from_secs(10);
+    let start_time = Instant::now();
+
     for (i, notification) in mqtt_connection.iter().enumerate() {
+        if start_time.elapsed() >= time_limit {
+            println!("Time limit reached. Exiting.");
+            break; // Exit the loop
+        }
+
+
+
         if args.verbose {
             println!("Notification[{}] = {:?}", i, notification);
         }
@@ -183,7 +194,7 @@ fn main() {
 
             devices.push(new_device);
             let (d, h, m ,s) = convert_millis_to_hms(uptime);
-            println!("Discovered new device: {} up {}d {}h {}m {}s", device, d, h, m, s);
+            println!("💡 {:16} 🥾 {}d {}h {}m {}s", device, d, h, m, s);
         }
         }
     }
