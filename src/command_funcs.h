@@ -20,7 +20,6 @@ namespace CMD {
     }
 
     void status(CommandArgs args) {
-        Serial.println("Printing status...  (not implemented yet)");
         // status message:
         // Memory
         // Time + uptime

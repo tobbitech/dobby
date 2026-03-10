@@ -837,136 +837,132 @@ void HANreader::parse_message() {
 // }
 
 
-// Thermostat::Thermostat(Connection * conn, 
-//         DS18B20_temperature_sensors * tempsensor,
-//         String tempsensor_name,
-//         uint8_t relay_pin,
-//         String name, 
-//         String mqtt_topic,
-//         float target_temperature_C,
-//         float hysteresis_C
-//     ) {
-//     _conn = conn;
-//     _tempsensor = tempsensor;
-//     _tempsensor_name = tempsensor_name;
-//     _relay_pin = relay_pin;
-//     _name = name;
-//     _mqtt_topic = mqtt_topic;
-//     _target_temperature_C = target_temperature_C;
-//     _hysteresis_C = hysteresis_C;
-//     _is_cooling = false;
-//     // _last_is_cooling = true;
-//     _state_changed = true;
-//     _minimum_off_time = 60000; // milliseconds
-// }
+Thermostat::Thermostat(Connection * conn, 
+        DS18B20_temperature_sensors * tempsensor,
+        etl::string<32> tempsensor_name,
+        uint8_t relay_pin,
+        etl::string<32> name, 
+        etl::string<64> mqtt_topic,
+        float target_temperature_C,
+        float hysteresis_C
+    ) {
+    _conn = conn;
+    _tempsensor = tempsensor;
+    _tempsensor_name = tempsensor_name;
+    _relay_pin = relay_pin;
+    _name = name;
+    _mqtt_topic = mqtt_topic;
+    _target_temperature_C = target_temperature_C;
+    _hysteresis_C = hysteresis_C;
+    _is_cooling = false;
+    _state_changed = true;
+    _minimum_off_time = 60000; // milliseconds
+}
 
-// void Thermostat::begin() {
+void Thermostat::begin() {
 
-//     _last_tick = millis();
-//     pinMode(_relay_pin, OUTPUT);
-//     _min_temperature_C = _target_temperature_C - _hysteresis_C;
-//     _max_temperature_C = _target_temperature_C + _hysteresis_C;
-//     _mqtt_target_temp_topic = _mqtt_topic + "/target_temperature_C";
-//     _mqtt_cooling_state_topic = _mqtt_topic + "/state_cooling";
-//     _conn->subscribeMqttTopic(_mqtt_target_temp_topic);
-//     _conn->debug("Thermostat created with topic: " + _mqtt_topic);
-//     _conn->debug("Temerature shall stay between " + String(_min_temperature_C) + "C and " + String(_max_temperature_C) + "C" );
-// }
+    _last_tick = millis();
+    pinMode(_relay_pin, OUTPUT);
+    _min_temperature_C = _target_temperature_C - _hysteresis_C;
+    _max_temperature_C = _target_temperature_C + _hysteresis_C;
+    _mqtt_target_temp_topic += _mqtt_topic;
+    _mqtt_target_temp_topic += "/target_temperature_C";
+    _mqtt_cooling_state_topic += _mqtt_topic;
+    _mqtt_cooling_state_topic += "/state_cooling";
+    _conn->subscribe_mqtt_topic(_mqtt_target_temp_topic);
+    log_info("Thermostat created with topic: %s", _mqtt_topic);
+    log_info("Keep temperature between %.1f°C and %.1f°C",_min_temperature_C, _max_temperature_C);
+    _conn->register_action(_mqtt_target_temp_topic, [this](etl::string<16> action_string) { 
+        this->parse_action(action_string); 
+    });
+}
 
-// void Thermostat::set_target_temperature_C(float temperature) {
-//     _target_temperature_C = temperature;
-//     _min_temperature_C = _target_temperature_C - _hysteresis_C;
-//     _max_temperature_C = _target_temperature_C + _hysteresis_C;
-//     return;
-// }
+void Thermostat::set_target_temperature_C(float temperature) {
+    _target_temperature_C = temperature;
+    _min_temperature_C = _target_temperature_C - _hysteresis_C;
+    _max_temperature_C = _target_temperature_C + _hysteresis_C;
+    return;
+}
 
-// void Thermostat::set_mqtt_target_temp_topic(String topic) {
-//     _mqtt_target_temp_topic = topic;
-// }
+void Thermostat::set_mqtt_target_temp_topic(etl::string<64> topic) {
+    _mqtt_target_temp_topic = topic;
+}
 
-// String Thermostat::get_mqtt_target_temp_topic() {
-//     return(_mqtt_target_temp_topic);
-// }
+etl::string<64> Thermostat::get_mqtt_target_temp_topic() {
+    return(_mqtt_target_temp_topic);
+}
 
-// String Thermostat::get_mqtt_main_topic() {
-//     return(_mqtt_topic);
-// }
+etl::string<64> Thermostat::get_mqtt_main_topic() {
+    return(_mqtt_topic);
+}
 
-// float Thermostat::get_target_temperature_C() {
-//     return(_target_temperature_C);
-// }
+float Thermostat::get_target_temperature_C() {
+    return(_target_temperature_C);
+}
 
-// float Thermostat::get_max_temperature_C() {
-//     return(_max_temperature_C);
-// }
+float Thermostat::get_max_temperature_C() {
+    return(_max_temperature_C);
+}
 
-// float Thermostat::get_min_temperature_C() {
-//     return(_min_temperature_C);
-// }
+float Thermostat::get_min_temperature_C() {
+    return(_min_temperature_C);
+}
 
-// float Thermostat::get_hysteresis_C() {
-//     return(_hysteresis_C);
-// }
+float Thermostat::get_hysteresis_C() {
+    return(_hysteresis_C);
+}
 
+float Thermostat::get_measured_temperature_C() {
+    float temperature = _tempsensor->getTemperatureByName(_tempsensor_name);
+    return(temperature);
+}
 
-// float Thermostat::get_measured_temperature_C() {
-//     float temperature = _tempsensor->getTemperatureByName(_tempsensor_name);
-//     return(temperature);
-// }
+void Thermostat::parse_action(etl::string<16> action_string) {
+    float new_target_temperature = etl::to_arithmetic<float>(action_string);
+    set_target_temperature_C(new_target_temperature);
+    log_info("Target temperature set to %.1f°C", new_target_temperature);
+}
 
-// void Thermostat::parse_mqtt_message(String mqtt_message, String topic) {
-//     // _conn->debug("Parsing topic: " + topic + " message: " + mqtt_message);
+bool Thermostat::is_cooling() {
+    return(_is_cooling);
+}
 
-//     if (topic == _mqtt_target_temp_topic) {
-//         float new_target_temperature = mqtt_message.toFloat();
-//         set_target_temperature_C(new_target_temperature);
-//         _conn->debug("Setting target temperature to " + String(new_target_temperature) + "°C");
-//     }
-// }
+void Thermostat::tick() {
+    // delay to avoid relay clapping
+    if (millis() > (_last_tick + _minimum_off_time)) {
+        _last_tick = millis();
+        float current_temperature = get_measured_temperature_C();
 
-// bool Thermostat::is_cooling() {
-//     return(_is_cooling);
-// }
+        if (current_temperature < _min_temperature_C && _is_cooling == true) {
+            _is_cooling = false;
+            _state_changed = true;
+        }
+        else if (current_temperature > _max_temperature_C && _is_cooling == false) {
+            _is_cooling = true;
+            _state_changed = true;
+        }
 
-// void Thermostat::tick() {
-//     // delay to avoid relay clapping
-//     if (millis() > (_last_tick + _minimum_off_time)) {
-//         _last_tick = millis();
-//         float current_temperature = get_measured_temperature_C();
-
-//         if (current_temperature < _min_temperature_C && _is_cooling == true) {
-//             _is_cooling = false;
-//             _state_changed = true;
-//         }
-//         else if (current_temperature > _max_temperature_C && _is_cooling == false) {
-//             _is_cooling = true;
-//             _state_changed = true;
-//         }
-
-//         if (_state_changed) {
-//             _state_changed = false;
-//             // _last_is_cooling = _is_cooling;
-//             String debug_info = "T: " + String(current_temperature, 1) + " [" + String(_min_temperature_C, 1) + ", " + String(_max_temperature_C, 1) + "] cooling: " + String(_is_cooling);
-//             if (_is_cooling) {
-//                 // start cooling, close relay
-//                 _conn->debug("Start cooling. " + debug_info);
-//                 digitalWrite(_relay_pin, HIGH);
-//                 _conn->publish(_mqtt_cooling_state_topic, "1");
-//             }
-//             else {
-//                 // Stopp cooling, open relay
-//                 _conn->debug("Stopped cooling. " + debug_info);
-//                 digitalWrite(_relay_pin, LOW);
-//                 _conn->publish(_mqtt_cooling_state_topic, "0");
-
-//             }
-//         }
-
-//     }
-
-// }
-
-
+        if (_state_changed) {
+            _state_changed = false;
+            // _last_is_cooling = _is_cooling;
+            log_debug("T: %.1f°C [%.1f°C, %.1f°C] cooling: %d", current_temperature, _min_temperature_C, _max_temperature_C, _is_cooling);
+            if (_is_cooling) {
+                // start cooling, close relay
+                log_info("Start cooling");
+                log_debug("T: %.1f°C [%.1f°C, %.1f°C] cooling: %d", current_temperature, _min_temperature_C, _max_temperature_C, _is_cooling);
+                digitalWrite(_relay_pin, HIGH);
+                _conn->publish(_mqtt_cooling_state_topic, "1");
+            }
+            else {
+                // Stopp cooling, open relay
+                log_info("Stopped cooling");
+                log_debug("T: %.1f°C [%.1f°C, %.1f°C] cooling: %d", current_temperature, _min_temperature_C, _max_temperature_C, _is_cooling);
+                digitalWrite(_relay_pin, LOW);
+                _conn->publish(_mqtt_cooling_state_topic, "0");
+            }
+        }
+    }
+}
 
 StepperMotorDoor::StepperMotorDoor(
         Connection * conn_ptr, 

@@ -269,53 +269,53 @@ class HANreader {
 // };
 
 
-// class Thermostat
-// {
-//     public:
-//         Thermostat(Connection * conn, 
-//             DS18B20_temperature_sensors * tempsensor, 
-//             String tempsensor_name, 
-//             uint8_t relay_pin,
-//             String name, 
-//             String mqtt_topic,
-//             float _target_temperature_C = 4.0,
-//             float hysteresis_C = 1.0
-//         );
-//         void begin();
-//         void tick();
-//         void set_target_temperature_C(float temperature);
-//         float get_target_temperature_C();
-//         float get_hysteresis_C();
-//         float get_min_temperature_C();
-//         float get_max_temperature_C();
-//         float get_measured_temperature_C();
-//         void set_mqtt_target_temp_topic(String topic);
-//         String get_mqtt_main_topic();
-//         String get_mqtt_target_temp_topic();
-//         bool is_cooling();
-//         void parse_mqtt_message(String mqtt_message, String topic); // sets min or max temp
+class Thermostat
+{
+    public:
+        Thermostat(Connection * conn, 
+            DS18B20_temperature_sensors * tempsensor, 
+            etl::string<32> tempsensor_name, 
+            uint8_t relay_pin,
+            etl::string<32> _name, 
+            etl::string<64> _mqtt_topic,
+            float _target_temperature_C = 4.0,
+            float hysteresis_C = 1.0
+        );
+        void begin();
+        void tick();
+        void set_target_temperature_C(float temperature);
+        float get_target_temperature_C();
+        float get_hysteresis_C();
+        float get_min_temperature_C();
+        float get_max_temperature_C();
+        float get_measured_temperature_C();
+        void set_mqtt_target_temp_topic(etl::string<64> topic);
+        etl::string<64> get_mqtt_main_topic();
+        etl::string<64> get_mqtt_target_temp_topic();
+        bool is_cooling();
+        void parse_action(etl::string<16> action_string); // sets min or max temp
+        
 
-//     private:
-//         Connection * _conn;
-//         DS18B20_temperature_sensors * _tempsensor;
-//         String _tempsensor_name;
-//         uint8_t _relay_pin;
-//         uint8_t _pwm_on_value;
-//         String _name;
-//         String _mqtt_topic;
-//         String _mqtt_target_temp_topic;
-//         String _mqtt_cooling_state_topic;
-//         float _target_temperature_C;
-//         float _hysteresis_C;
-//         float _max_temperature_C;
-//         float _min_temperature_C;
-//         uint32_t _last_tick;
-//         bool _is_cooling;
-//         // bool _last_is_cooling;
-//         bool _state_changed;
-//         uint32_t _minimum_off_time;
+    private:
+        Connection * _conn;
+        DS18B20_temperature_sensors * _tempsensor;
+        etl::string<32> _tempsensor_name;
+        uint8_t _relay_pin;
+        uint8_t _pwm_on_value;
+        etl::string<32> _name;
+        etl::string<64> _mqtt_topic;
+        etl::string<64> _mqtt_target_temp_topic;
+        etl::string<64> _mqtt_cooling_state_topic;
+        float _target_temperature_C;
+        float _hysteresis_C;
+        float _max_temperature_C;
+        float _min_temperature_C;
+        uint32_t _last_tick;
+        bool _is_cooling;
+        bool _state_changed;
+        uint32_t _minimum_off_time;
 
-// };
+};
 
 class StepperMotorDoor
 {
