@@ -1,5 +1,3 @@
-#include <Arduino.h>
-
 #include "iot_capability.h"
 
 OnOffSwitch::OnOffSwitch(
@@ -658,183 +656,193 @@ void HANreader::parse_message() {
 }
 
 
-// VEdirectReader::VEdirectReader(Connection * conn, String mqttTopic, uint8_t RXpin, uint8_t TXpin): serialVE(2)
-// {
-//     _RXpin = RXpin;
-//     _TXpin = TXpin;
-//     _conn = conn;
-//     _mqttTopic = mqttTopic;
-// }
+VEdirectReader::VEdirectReader(Connection * conn, etl::string<MQTT_TOPIC_STRING_LENGTH> mqttTopic, uint8_t RXpin, uint8_t TXpin): serialVE(2)
+{
+    _RXpin = RXpin;
+    _TXpin = TXpin;
+    _conn = conn;
+    _mqttTopic = mqttTopic;
+}
 
-// void VEdirectReader::begin() {
-//     serialVE.begin(19200, SERIAL_8N1, _RXpin, _TXpin); // for hardwareserial
-//     _send_raw_data_timer.set(100, "seconds");
-//     set_publish_timer_s(5);
-//     _last_byte_millis = 0;
-//     _message = "";
-//     _message_buf_pos = 0;
-//     _voltage_V = 0;
-//     _current_A = 0;
-//     _power_W = 0;
-//     _soc = 0;
-//     _soc_by_v = 0;
-//     _pv_voltage_V = 0;
-//     _pv_power_W = 0;
-//     _voltage_is_set = false;
-//     _current_is_set = false;
-//     _power_is_set = false;
-//     _soc_is_set = false;
-//     _pv_voltage_is_set = false;
-//     _pv_power_is_set = false;
-//     _yield_total_is_set = false;
-//     _yield_today_is_set = false;
-//     _max_power_today_is_set = false;
-//     _yield_yesterday_is_set = false;
-//     _max_power_yesterday_is_set = false;
+void VEdirectReader::begin() {
+    serialVE.begin(19200, SERIAL_8N1, _RXpin, _TXpin); // for hardwareserial
+    _send_raw_data_timer.set(100, 's');
+    set_publish_timer_s(5);
+    _last_byte_millis = 0;
+    _message.clear();
+    _voltage_V = 0;
+    _current_A = 0;
+    _power_W = 0;
+    _soc = 0;
+    _soc_by_v = 0;
+    _pv_voltage_V = 0;
+    _pv_power_W = 0;
+    _voltage_is_set = false;
+    _current_is_set = false;
+    _power_is_set = false;
+    _soc_is_set = false;
+    _pv_voltage_is_set = false;
+    _pv_power_is_set = false;
+    _yield_total_is_set = false;
+    _yield_today_is_set = false;
+    _max_power_today_is_set = false;
+    _yield_yesterday_is_set = false;
+    _max_power_yesterday_is_set = false;
     
-// }
+}
 
-// void VEdirectReader::end() {
-//     serialVE.end();
-// }
+void VEdirectReader::end() {
+    serialVE.end();
+}
 
-// void VEdirectReader::tick() {
-//     uint32_t time_since_last_byte = millis() - _last_byte_millis;
+void VEdirectReader::tick() {
+    uint32_t time_since_last_byte = millis() - _last_byte_millis;
 
-//     if ( time_since_last_byte > VEDIRECT_TIMEOUT_MS && _message != "" ) {
-//         _message_buf[_message_buf_pos] = '\0';
-//         parse_message();
-//         _message = "";
-//         _message_buf_pos = 0;
-//     }
+    if ( time_since_last_byte > VEDIRECT_TIMEOUT_MS && !_message.empty() ) {
+        // _message_buf[_message_buf_pos] = '\0';
+        parse_message();
+        _message.clear();
+        // _message_buf_pos = 0;
+    }
 
-//     if ( serialVE.available() > 0 ) {
-//         char recv_char = serialVE.read();
-//         _last_byte_millis = millis(); // reset timeout counter
-//         _message += recv_char;
-//         _message_buf[_message_buf_pos++] = recv_char;
-//     }
-// }
+    if ( serialVE.available() > 0 ) {
+        char recv_char = serialVE.read();
+        _last_byte_millis = millis(); // reset timeout counter
+        _message += recv_char;
+        // _message_buf[_message_buf_pos++] = recv_char;
+    }
+}
 
-// void VEdirectReader::set_publish_timer_s(u_int16_t seconds) {
-//     _publish_data_timer.set(seconds, "seconds");
-// }
+void VEdirectReader::set_publish_timer_s(u_int16_t seconds) {
+    _publish_data_timer.set(seconds, 's');
+}
 
-// void VEdirectReader::publish_data() {
-//     if (_voltage_is_set) {
-//         _conn->publish(_mqttTopic + "/battery_voltage_V", String(_voltage_V, 2));
-//         _conn->publish(_mqttTopic + "/soc_by_v", String(_soc_by_v, 1));
-//     }
-//     if (_current_is_set) {
-//         _conn->publish(_mqttTopic + "/current_I", String(_current_A, 2));
-//     }
-//     if (_power_is_set) {
-//         _conn->publish(_mqttTopic + "/power_W", String(_power_W, 0));
-//     }
-//     if (_soc_is_set) {
-//         _conn->publish(_mqttTopic + "/soc_%", String(_soc, 1));
-//     }
-//     if (_pv_voltage_is_set) {
-//         _conn->publish(_mqttTopic + "/pv_voltage_V", String(_pv_voltage_V, 2));
-//     }
-//     if (_pv_power_is_set) {
-//         _conn->publish(_mqttTopic + "/pv_power_W", String(_pv_power_W, 0));
-//     }
-//     if (_yield_total_is_set) {
-//         _conn->publish(_mqttTopic + "/yield_total_kWh", String(_yield_total_kWh, 2));
-//     }
-//     if (_yield_today_is_set) {
-//         _conn->publish(_mqttTopic + "/yield_today_kWh", String(_yield_today_kWh, 2));
-//     }
-//     if (_max_power_today_is_set) {
-//         _conn->publish(_mqttTopic + "/max_power_today_W", String(_max_power_today_W, 0));
-//     }
-//     if (_yield_yesterday_is_set) {
-//         _conn->publish(_mqttTopic + "/yield_yesterday_kWh", String(_yield_yesterday_kWh, 2));
-//     }
-//     if (_max_power_yesterday_is_set) {
-//         _conn->publish(_mqttTopic + "/max_power_yesterday_W", String(_max_power_yesterday_W, 0));
-//     }
-// }
+void VEdirectReader::publish_float(etl::string<16> subtopic, float value, uint8_t decimal_places) {
+    auto format_spec = etl::format_spec().precision(decimal_places);
+    etl::string<16> number_buffer;
+    etl::string<MQTT_TOPIC_STRING_LENGTH + 16> topic(_mqttTopic);
+    topic += "/";
+    topic += subtopic;
+    etl::to_string(value, number_buffer, format_spec);
+    _conn->publish(topic, number_buffer);
+}
 
-// void VEdirectReader::parse_message() {
-//     if( _send_raw_data_timer.is_done() ) {
-//         _conn->publish(_mqttTopic + "/VEdirect/raw", _message);
-//     }
+void VEdirectReader::publish_data() {
+    if (_voltage_is_set) {
+        publish_float("battery_voltage_V", _voltage_V, 2);
+        publish_float("soc_by_v", _soc_by_v, 1);
+    }
+    if (_current_is_set) {
+        publish_float("current_I", _current_A, 2);
+    }
+    if (_power_is_set) {
+        publish_float("power_W", _power_W, 0);
+    }
+    if (_soc_is_set) {
+        publish_float("soc_%", _soc, 1);
+    }
+    if (_pv_voltage_is_set) {
+        publish_float("pv_voltage_V", _pv_voltage_V, 2);
+    }
+    if (_pv_power_is_set) {
+        publish_float("pv_power_W", _pv_power_W, 0);
+    }
+    if (_yield_total_is_set) {
+        publish_float("yield_total_kWh", _yield_total_kWh, 2);
+    }
+    if (_yield_today_is_set) {
+        publish_float("yield_today_kWh", _yield_today_kWh, 2);
+    }
+    if (_max_power_today_is_set) {
+        publish_float("max_power_today_W", _max_power_today_W, 0);
+    }
+    if (_yield_yesterday_is_set) {
+        publish_float("yield_yesterday_kWh", _yield_yesterday_kWh, 2);
+    }
+    if (_max_power_yesterday_is_set) {
+        publish_float("max_power_yesterday_W", _max_power_yesterday_W, 0);
+    }
+}
 
-//     String key = "none";
-//     String value ="empty";
+void VEdirectReader::parse_message() {
 
-//     bool separator_found = false;
+    etl::string<4> key("none");
+    etl::string<16> value("empty");
 
-//     for (int i = 0; i < _message_buf_pos; i++) {
-//         if ( _message[i] == '\n') {
-//             if (key == "V") {
-//                 _voltage_V = value.toInt() / 1000.0;
-//                 _soc_by_v = (0.9369*_voltage_V*_voltage_V - 87.69*_voltage_V + 2050);
-//                 if (_soc_by_v > 100 ) { _soc_by_v = 100; }
-//                 _voltage_is_set = true;
-//                 //trollslottetBatterySOCbyV.sendCommand((0.009369*Math.pow(x,2) - 0.8769*x + 20.5)*100);
-// //88.69*Math.pow(x,6) - 151.5*Math.pow(x,5) - 21.37*Math.pow(x,4) + 179.9*Math.pow(x,3) - 125.7*Math.pow(x,2) + 39.33*x + 48);
-//             }
-//             else if (key == "I") {
-//                 _current_A = value.toInt() / 1000.0;
-//                 _current_is_set = true;
-//             }
-//             else if (key == "P") {
-//                 _power_W = value.toInt();
-//                 _power_is_set = true;
-//             }
-//             else if (key == "SOC") {
-//                 _soc = value.toInt() / 10;
-//                 _soc_is_set = true;
-//             }
-//             else if (key == "VPV") {
-//                 _pv_voltage_V = value.toInt() / 1000.0;
-//                 _pv_voltage_is_set = true;
-//             }
-//             else if (key == "PPV") {
-//                 _pv_power_W = value.toInt();
-//                 _pv_power_is_set = true;
-//             }
-//             else if (key == "H19") {
-//                 _yield_total_kWh = value.toInt() / 100.0;
-//                 _yield_total_is_set = true;
-//             }
-//             else if (key == "H20") {
-//                 _yield_today_kWh = value.toInt() / 100.0;
-//                 _yield_today_is_set = true;
-//             }
-//             else if (key == "H21") {
-//                 _max_power_today_W = value.toInt();
-//                 _max_power_today_is_set = true;
-//             }
-//             else if (key == "H22") {
-//                 _yield_yesterday_kWh = value.toInt() / 100.0;
-//                 _yield_yesterday_is_set = true;
-//             }
-//             else if (key == "H23") {
-//                 _max_power_yesterday_W = value.toInt();
-//                 _max_power_yesterday_is_set = true;
-//             }
+    bool separator_found = false;
 
-//             key = "";
-//             value = "";
-//             separator_found = false;
-//         }
-//         else if (_message[i] == '\t') {
-//             // separator found!
-//             separator_found = true;
-//         }
-//         else if (separator_found == false ) {
-//             // get data field:
-//             key += _message[i];
-//         }
-//         else {
-//             value += _message[i];
-//         }
-//     }
-// }
+    for (size_t i = 0; i < _message.length(); i++ ) {
+        if ( _message[i] == '\n') {
+            auto float_value = etl::to_arithmetic<float>(value);
+            if (!float_value.has_value()) {
+                log_warning("Could not parse float value from string: %s", value.c_str());
+            }
+            else {
+                if (key == "V") {
+                    _voltage_V = float_value.value() / 1000.0f;
+                _soc_by_v = (0.9369f*_voltage_V*_voltage_V - 87.69f*_voltage_V + 2050.0f);
+                if (_soc_by_v > 100 ) { _soc_by_v = 100; }
+                _voltage_is_set = true;
+                }
+                else if (key == "I") {
+                    _current_A = float_value.value() / 1000.0f;
+                    _current_is_set = true;
+                }
+                else if (key == "P") {
+                    _power_W = float_value.value();
+                    _power_is_set = true;
+                }
+                else if (key == "SOC") {
+                    _soc = float_value.value() / 10.0f;
+                    _soc_is_set = true;
+                }
+                else if (key == "VPV") {
+                    _pv_voltage_V = float_value.value() / 1000.0f;
+                    _pv_voltage_is_set = true;
+                }
+                else if (key == "PPV") {
+                    _pv_power_W = float_value.value();
+                    _pv_power_is_set = true;
+                }
+                else if (key == "H19") {
+                    _yield_total_kWh = float_value.value() / 100.0f;
+                    _yield_total_is_set = true;
+                }
+                else if (key == "H20") {
+                    _yield_today_kWh = float_value.value() / 100.0f;
+                    _yield_today_is_set = true;
+                }
+                else if (key == "H21") {
+                    _max_power_today_W = float_value.value();
+                    _max_power_today_is_set = true;
+                }
+                else if (key == "H22") {
+                    _yield_yesterday_kWh = float_value.value() / 100.0f;
+                    _yield_yesterday_is_set = true;
+                }
+                else if (key == "H23") {
+                    _max_power_yesterday_W = float_value.value();
+                    _max_power_yesterday_is_set = true;
+                }
+            }
+
+            key.clear();
+            value.clear();
+            separator_found = false;
+        }
+        else if (_message[i] == '\t') {
+            // separator found!
+            separator_found = true;
+        }
+        else if (separator_found == false ) {
+            // get data field:
+            key += _message[i];
+        }
+        else {
+            value += _message[i];
+        }
+    }
+}
 
 
 Thermostat::Thermostat(Connection * conn, 
@@ -884,15 +892,15 @@ void Thermostat::set_target_temperature_C(float temperature) {
     return;
 }
 
-void Thermostat::set_mqtt_target_temp_topic(etl::string<64> topic) {
+void Thermostat::set_mqtt_target_temp_topic(etl::string<MQTT_TOPIC_STRING_LENGTH> topic) {
     _mqtt_target_temp_topic = topic;
 }
 
-etl::string<64> Thermostat::get_mqtt_target_temp_topic() {
+etl::string<MQTT_TOPIC_STRING_LENGTH> Thermostat::get_mqtt_target_temp_topic() {
     return(_mqtt_target_temp_topic);
 }
 
-etl::string<64> Thermostat::get_mqtt_main_topic() {
+etl::string<MQTT_TOPIC_STRING_LENGTH> Thermostat::get_mqtt_main_topic() {
     return(_mqtt_topic);
 }
 
@@ -968,7 +976,7 @@ StepperMotorDoor::StepperMotorDoor(
         Connection * conn_ptr, 
         AccelStepper * stepper_ptr,
         etl::string<32> name, 
-        etl::string<64> mqtt_topic,
+        etl::string<MQTT_TOPIC_STRING_LENGTH> mqtt_topic,
         int pin_coil_enable
     )
 {
@@ -994,7 +1002,7 @@ void StepperMotorDoor::begin() {
     });
 }
 
-etl::string<64> StepperMotorDoor::getMqttTopic() {
+etl::string<MQTT_TOPIC_STRING_LENGTH> StepperMotorDoor::getMqttTopic() {
     return(_mqtt_topic);
 }
 

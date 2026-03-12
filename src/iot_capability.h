@@ -8,6 +8,9 @@
 #include <DallasTemperature.h>
 #include <HardwareSerial.h>
 #include <AccelStepper.h>
+#include <etl/string.h>
+#include <etl/to_string.h>
+#include <etl/to_arithmetic.h>
 
 #define MQTT_TOPIC_STRING_LENGTH 64
 #define MQTT_PAYLOAD_STRING_LENGTH 256
@@ -214,59 +217,58 @@ class HANreader {
         etl::string<88> _subtopic;
 };
 
-// #define VEDIRECT_TIMEOUT_MS 100
-// #define VEDIRECT_MESSAGE_SIZE 2000
-// #define VEDIRECT_NUMBER_KEYS_TO_PARSE 20
-// class VEdirectReader {
-//     public:
-//         VEdirectReader(Connection *conn, String mqttTopic, u_int8_t RXpin, u_int8_t TXpin);
-//         void begin();
-//         void end();
-//         void tick();
-//         HardwareSerial serialVE;
-//         void parse_message();
-//         void set_publish_timer_s(u_int16_t seconds);
-//         void publish_data();
+#define VEDIRECT_TIMEOUT_MS 100
+#define VEDIRECT_MESSAGE_SIZE 2000
+#define VEDIRECT_NUMBER_KEYS_TO_PARSE 20
+class VEdirectReader {
+    public:
+        VEdirectReader(Connection *conn, etl::string<MQTT_TOPIC_STRING_LENGTH> mqttTopic, u_int8_t RXpin, u_int8_t TXpin);
+        void begin();
+        void end();
+        void tick();
+        HardwareSerial serialVE;
+        void parse_message();
+        void set_publish_timer_s(u_int16_t seconds);
+        void publish_data();
+        void publish_float(etl::string<16> subtopic, float value, uint8_t decimal_places);
 
-//     private:
-//         Connection * _conn;
-//         String _mqttTopic;
-//         uint8_t _RXpin;
-//         uint8_t _TXpin;
-//         int16_t _state;
-//         int16_t _prev_state;
-//         char _recv_char;
-//         String _message;
-//         uint8_t _message_buf[VEDIRECT_MESSAGE_SIZE];
-//         uint16_t _message_buf_pos;
-//         void _receive_char();
-//         uint32_t _last_byte_millis;
-//         Timer _send_raw_data_timer;
-//         Timer _publish_data_timer;
-//         float _voltage_V;
-//         float _current_A;
-//         float _power_W;
-//         float _soc;
-//         float _soc_by_v;
-//         float _pv_voltage_V;
-//         float _pv_power_W;
-//         float _yield_total_kWh;
-//         float _yield_today_kWh;
-//         float _max_power_today_W;
-//         float _yield_yesterday_kWh;
-//         float _max_power_yesterday_W;
-//         bool _voltage_is_set;
-//         bool _current_is_set;
-//         bool _power_is_set;
-//         bool _soc_is_set;
-//         bool _pv_voltage_is_set;
-//         bool _pv_power_is_set;
-//         bool _yield_total_is_set;
-//         bool _yield_today_is_set;
-//         bool _max_power_today_is_set;
-//         bool _yield_yesterday_is_set;
-//         bool _max_power_yesterday_is_set;
-// };
+    private:
+        Connection * _conn;
+        etl::string<MQTT_TOPIC_STRING_LENGTH> _mqttTopic;
+        uint8_t _RXpin;
+        uint8_t _TXpin;
+        int16_t _state;
+        int16_t _prev_state;
+        char _recv_char;
+        etl::string<VEDIRECT_MESSAGE_SIZE> _message;
+        void _receive_char();
+        uint32_t _last_byte_millis;
+        Timer _send_raw_data_timer;
+        Timer _publish_data_timer;
+        float _voltage_V;
+        float _current_A;
+        float _power_W;
+        float _soc;
+        float _soc_by_v;
+        float _pv_voltage_V;
+        float _pv_power_W;
+        float _yield_total_kWh;
+        float _yield_today_kWh;
+        float _max_power_today_W;
+        float _yield_yesterday_kWh;
+        float _max_power_yesterday_W;
+        bool _voltage_is_set;
+        bool _current_is_set;
+        bool _power_is_set;
+        bool _soc_is_set;
+        bool _pv_voltage_is_set;
+        bool _pv_power_is_set;
+        bool _yield_total_is_set;
+        bool _yield_today_is_set;
+        bool _max_power_today_is_set;
+        bool _yield_yesterday_is_set;
+        bool _max_power_yesterday_is_set;
+};
 
 
 class Thermostat
@@ -277,7 +279,7 @@ class Thermostat
             etl::string<32> tempsensor_name, 
             uint8_t relay_pin,
             etl::string<32> _name, 
-            etl::string<64> _mqtt_topic,
+            etl::string<MQTT_TOPIC_STRING_LENGTH> _mqtt_topic,
             float _target_temperature_C = 4.0,
             float hysteresis_C = 1.0
         );
@@ -289,9 +291,9 @@ class Thermostat
         float get_min_temperature_C();
         float get_max_temperature_C();
         float get_measured_temperature_C();
-        void set_mqtt_target_temp_topic(etl::string<64> topic);
-        etl::string<64> get_mqtt_main_topic();
-        etl::string<64> get_mqtt_target_temp_topic();
+        void set_mqtt_target_temp_topic(etl::string<MQTT_TOPIC_STRING_LENGTH> topic);
+        etl::string<MQTT_TOPIC_STRING_LENGTH> get_mqtt_main_topic();
+        etl::string<MQTT_TOPIC_STRING_LENGTH> get_mqtt_target_temp_topic();
         bool is_cooling();
         void parse_action(etl::string<16> action_string); // sets min or max temp
         
@@ -303,9 +305,9 @@ class Thermostat
         uint8_t _relay_pin;
         uint8_t _pwm_on_value;
         etl::string<32> _name;
-        etl::string<64> _mqtt_topic;
-        etl::string<64> _mqtt_target_temp_topic;
-        etl::string<64> _mqtt_cooling_state_topic;
+        etl::string<MQTT_TOPIC_STRING_LENGTH> _mqtt_topic;
+        etl::string<MQTT_TOPIC_STRING_LENGTH> _mqtt_target_temp_topic;
+        etl::string<MQTT_TOPIC_STRING_LENGTH> _mqtt_cooling_state_topic;
         float _target_temperature_C;
         float _hysteresis_C;
         float _max_temperature_C;
@@ -324,7 +326,7 @@ class StepperMotorDoor
             Connection * conn_ptr,
             AccelStepper * stepper_ptr,
             etl::string<32> name, 
-            etl::string<64> mqtt_topic,
+            etl::string<MQTT_TOPIC_STRING_LENGTH>mqtt_topic,
             int pin_coil_enable
         );
         void begin();
@@ -340,7 +342,7 @@ class StepperMotorDoor
         void resetInClosedPosition();
         long getCurrentPosition();
         void changeDirection();
-        etl::string<64> getMqttTopic();
+        etl::string<MQTT_TOPIC_STRING_LENGTH> getMqttTopic();
         etl::string<32> getName();
         void parse_action(etl::string<16> action_string);
         void connect_open_limit_switch(InputMomentary * open_limit_switch);
@@ -349,7 +351,7 @@ class StepperMotorDoor
         Connection * _conn;
         AccelStepper * _stepper;
         etl::string<32> _name;
-        etl::string<64> _mqtt_topic;
+        etl::string<MQTT_TOPIC_STRING_LENGTH> _mqtt_topic;
         int _pin_coil_enable;
         uint16_t _stepper_max_speed;
         uint16_t _stepper_acceleration;
